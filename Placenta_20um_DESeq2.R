@@ -17,8 +17,8 @@ library(apeglm)
 
 # ---- 1. LOAD COUNT DATA -----------------------------------------------------
 
-# Both cohorts' .tabular files live in data/placenta (2025 files use the
-# "<n>_<dose>_counts" naming; 2026 files use the "n<n>_..._featureCounts" naming).
+# Both cohorts' .tabular files live in data/placenta, named
+# tissue_<cohort>_donor<n>_<condition>.tabular (cohort = 2025 or 2026).
 base_25 <- here("data", "placenta")
 base_26 <- here("data", "placenta")
 
@@ -29,22 +29,22 @@ load_tab <- function(path, col_name) {
 }
 
 # 2025 donors (study = first)
-n1_20um_25  <- load_tab(file.path(base_25, "1_20um_counts.tabular"),    "n1_20um_25")
-n1_ctrl_25  <- load_tab(file.path(base_25, "1_Control_counts.tabular"), "n1_ctrl_25")
-n2_20um_25  <- load_tab(file.path(base_25, "2_20um_counts.tabular"),    "n2_20um_25")
-n2_ctrl_25  <- load_tab(file.path(base_25, "2_Control_counts.tabular"), "n2_ctrl_25")
-n3_20um_25  <- load_tab(file.path(base_25, "3_20um_counts.tabular"),    "n3_20um_25")
-n3_ctrl_25  <- load_tab(file.path(base_25, "3_Control_counts.tabular"), "n3_ctrl_25")
+n1_20um_25  <- load_tab(file.path(base_25, "tissue_2025_donor1_20um.tabular"),    "n1_20um_25")
+n1_ctrl_25  <- load_tab(file.path(base_25, "tissue_2025_donor1_control.tabular"), "n1_ctrl_25")
+n2_20um_25  <- load_tab(file.path(base_25, "tissue_2025_donor2_20um.tabular"),    "n2_20um_25")
+n2_ctrl_25  <- load_tab(file.path(base_25, "tissue_2025_donor2_control.tabular"), "n2_ctrl_25")
+n3_20um_25  <- load_tab(file.path(base_25, "tissue_2025_donor3_20um.tabular"),    "n3_20um_25")
+n3_ctrl_25  <- load_tab(file.path(base_25, "tissue_2025_donor3_control.tabular"), "n3_ctrl_25")
 
 # 2026 donors (study = second)
-n1_20um_26  <- load_tab(file.path(base_26, "n1_20um_26 featureCounts.tabular"),    "n1_20um_26")
-n1_ctrl_26  <- load_tab(file.path(base_26, "n1_control_26 featureCounts.tabular"), "n1_ctrl_26")
-n2_20um_26  <- load_tab(file.path(base_26, "n2_20um_26 featureCounts.tabular"),    "n2_20um_26")
-n2_ctrl_26  <- load_tab(file.path(base_26, "n2_control_26 featureCounts.tabular"), "n2_ctrl_26")
-n3_20um_26  <- load_tab(file.path(base_26, "n3_20um_26 featureCounts.tabular"),    "n3_20um_26")
-n3_ctrl_26  <- load_tab(file.path(base_26, "n3_control_26 featureCounts.tabular"), "n3_ctrl_26")
-n5_20um_26  <- load_tab(file.path(base_26, "n5_20um_26 featureCounts.tabular"),    "n5_20um_26")
-n5_ctrl_26  <- load_tab(file.path(base_26, "n5_control_26 featureCounts.tabular"), "n5_ctrl_26")
+n1_20um_26  <- load_tab(file.path(base_26, "tissue_2026_donor1_20um.tabular"),    "n1_20um_26")
+n1_ctrl_26  <- load_tab(file.path(base_26, "tissue_2026_donor1_control.tabular"), "n1_ctrl_26")
+n2_20um_26  <- load_tab(file.path(base_26, "tissue_2026_donor2_20um.tabular"),    "n2_20um_26")
+n2_ctrl_26  <- load_tab(file.path(base_26, "tissue_2026_donor2_control.tabular"), "n2_ctrl_26")
+n3_20um_26  <- load_tab(file.path(base_26, "tissue_2026_donor3_20um.tabular"),    "n3_20um_26")
+n3_ctrl_26  <- load_tab(file.path(base_26, "tissue_2026_donor3_control.tabular"), "n3_ctrl_26")
+n5_20um_26  <- load_tab(file.path(base_26, "tissue_2026_donor5_20um.tabular"),    "n5_20um_26")
+n5_ctrl_26  <- load_tab(file.path(base_26, "tissue_2026_donor5_control.tabular"), "n5_ctrl_26")
 
 # Merge all 14 samples
 df_list <- list(

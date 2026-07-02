@@ -22,69 +22,69 @@ library(ggplot2)
 setwd(here("data", "placenta"))
 
 # n1_5um_25 
-n1_5um_25_count_data <- read.csv('1_5um_counts.tabular', header = TRUE, sep = "\t")
+n1_5um_25_count_data <- read.csv('tissue_2025_donor1_5um.tabular', header = TRUE, sep = "\t")
 colnames(n1_5um_25_count_data)[2] = "n1_5um_25"
 
 # n1_control_25 
 
-n1_control_25_count_data <- read.csv('1_Control_counts.tabular', header = TRUE, sep = "\t")
+n1_control_25_count_data <- read.csv('tissue_2025_donor1_control.tabular', header = TRUE, sep = "\t")
 colnames(n1_control_25_count_data)[2] = "n1_control_25"
 
 # n2_5um_25 
-n2_5um_25_count_data <- read.csv('2_5um_counts.tabular', header = TRUE, sep = "\t")
+n2_5um_25_count_data <- read.csv('tissue_2025_donor2_5um.tabular', header = TRUE, sep = "\t")
 colnames(n2_5um_25_count_data)[2] = "n2_5um_25"
 
 # n2_control_25 
 
-n2_control_25_count_data <- read.csv('2_Control_counts.tabular', header = TRUE, sep = "\t")
+n2_control_25_count_data <- read.csv('tissue_2025_donor2_control.tabular', header = TRUE, sep = "\t")
 colnames(n2_control_25_count_data)[2] = "n2_control_25"
 
 # n3_5um_25 
-n3_5um_25_count_data <- read.csv('3_5um_counts.tabular', header = TRUE, sep = "\t")
+n3_5um_25_count_data <- read.csv('tissue_2025_donor3_5um.tabular', header = TRUE, sep = "\t")
 colnames(n3_5um_25_count_data)[2] = "n3_5um_25"
 
 # n3_control_25 
 
-n3_control_25_count_data <- read.csv('3_Control_counts.tabular', header = TRUE, sep = "\t")
+n3_control_25_count_data <- read.csv('tissue_2025_donor3_control.tabular', header = TRUE, sep = "\t")
 colnames(n3_control_25_count_data)[2] = "n3_control_25"
 
 
 # n1_5um_26 
-n1_5um_26_count_data <- read.csv('n1_5um_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n1_5um_26_count_data <- read.csv('tissue_2026_donor1_5um.tabular', header = TRUE, sep = "\t")
 colnames(n1_5um_26_count_data)[2] = "n1_5um_26"
 
 # n1_control_26 
 
-n1_control_26_count_data <- read.csv('n1_control_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n1_control_26_count_data <- read.csv('tissue_2026_donor1_control.tabular', header = TRUE, sep = "\t")
 colnames(n1_control_26_count_data)[2] = "n1_control_26"
 
 # n2_5um_26 
-n2_5um_26_count_data <- read.csv('n2_5um_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n2_5um_26_count_data <- read.csv('tissue_2026_donor2_5um.tabular', header = TRUE, sep = "\t")
 colnames(n2_5um_26_count_data)[2] = "n2_5um_26"
 
 # n2_control_26 
 
-n2_control_26_count_data <- read.csv('n2_control_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n2_control_26_count_data <- read.csv('tissue_2026_donor2_control.tabular', header = TRUE, sep = "\t")
 colnames(n2_control_26_count_data)[2] = "n2_control_26"
 
 # n3_5um_26 
 
-n3_5um_26_count_data <- read.csv('n3_5um_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n3_5um_26_count_data <- read.csv('tissue_2026_donor3_5um.tabular', header = TRUE, sep = "\t")
 colnames(n3_5um_26_count_data)[2] = "n3_5um_26"
 
 # n3_control_26 
 
-n3_control_26_count_data <- read.csv('n3_control_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n3_control_26_count_data <- read.csv('tissue_2026_donor3_control.tabular', header = TRUE, sep = "\t")
 colnames(n3_control_26_count_data)[2] = "n3_control_26"
 
 # n5_5um_26 
 
-n5_5um_26_count_data <- read.csv('n5_5um_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n5_5um_26_count_data <- read.csv('tissue_2026_donor5_5um.tabular', header = TRUE, sep = "\t")
 colnames(n5_5um_26_count_data)[2] = "n5_5um_26"
 
 # n5_control_26 
 
-n5_control_26_count_data <- read.csv('n5_control_26 featureCounts.tabular', header = TRUE, sep = "\t")
+n5_control_26_count_data <- read.csv('tissue_2026_donor5_control.tabular', header = TRUE, sep = "\t")
 colnames(n5_control_26_count_data)[2] = "n5_control_26"
 
 ```

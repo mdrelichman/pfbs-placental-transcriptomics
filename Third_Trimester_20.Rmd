@@ -34,7 +34,7 @@ library(ggplot2)
 ```{r}
 # Input count files live under the project's data/ folder.
 # A directory variable (unlike setwd) persists across R Markdown chunks.
-third_dir <- here("data", "featurecounts_pfbs")
+third_dir <- here("data", "placenta_2026")
 ```
 
 ```{r}

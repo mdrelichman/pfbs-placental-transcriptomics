@@ -17,7 +17,7 @@ library(ggplot2)
 # Load Feature Count Data 
 ```{r}
 # Define the file path and set working directory 
-setwd(here("data", "featurecounts_2026"))
+setwd(here("data", "placenta_2026"))
 
 # n1_20um_26 
 n1_20um_26_count_data <- read.csv('n1_20um_26 featureCounts.tabular', header = TRUE, sep = "\t")

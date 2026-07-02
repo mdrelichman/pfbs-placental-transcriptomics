@@ -19,7 +19,7 @@ library(ggplot2)
 ```{r}
 # Define the file path and set working directory 
 
-setwd(here("data", "placenta_2026"))
+setwd(here("data", "placenta"))
 
 # n1_5um_25 
 n1_5um_25_count_data <- read.csv('1_5um_counts.tabular', header = TRUE, sep = "\t")

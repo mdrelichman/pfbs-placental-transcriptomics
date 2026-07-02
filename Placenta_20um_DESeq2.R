@@ -17,10 +17,10 @@ library(apeglm)
 
 # ---- 1. LOAD COUNT DATA -----------------------------------------------------
 
-# Both cohorts' .tabular files live in data/placenta_2026 (2025 files use the
+# Both cohorts' .tabular files live in data/placenta (2025 files use the
 # "<n>_<dose>_counts" naming; 2026 files use the "n<n>_..._featureCounts" naming).
-base_25 <- here("data", "placenta_2026")
-base_26 <- here("data", "placenta_2026")
+base_25 <- here("data", "placenta")
+base_26 <- here("data", "placenta")
 
 load_tab <- function(path, col_name) {
   df <- read.csv(path, header = TRUE, sep = "\t")

@@ -131,6 +131,41 @@ meta_data$sample_id <- as.factor(meta_data$sample_id)
 meta_data$sex <- as.factor(meta_data$sex)
 meta_data$study <- as.factor(meta_data$study)
 
+# Verify counts columns match metadata rows (full dataset)
+all(colnames(count_data) %in% rownames(meta_data))
+all(colnames(count_data) == rownames(meta_data))
+```
+
+# Descriptive Statistics / QC on the Full Cohort (run BEFORE subsetting by sex)
+# PCA + sample-distance heatmap across all samples; these justify splitting by sex.
+```{r}
+library(DESeq2)
+library(ggplot2)
+library(pheatmap)
+
+# Build a full-cohort DESeqDataSet for visualization only (blind VST ignores the design)
+dds_all <- DESeqDataSetFromMatrix(
+  countData = count_data,
+  colData   = meta_data,
+  design    = ~ treatment
+)
+
+# Normalize for visualization only
+vsd <- vst(dds_all, blind = TRUE)
+
+# PCA — color by every potential confounder
+plotPCA(vsd, intgroup = "treatment")
+plotPCA(vsd, intgroup = "study")        # batch/sequencing date
+plotPCA(vsd, intgroup = "sex")
+plotPCA(vsd, intgroup = "sample_id")    # individual donor
+
+# Sample distance heatmap
+sampleDists <- dist(t(assay(vsd)))
+pheatmap(as.matrix(sampleDists),
+         annotation_col = meta_data[, c("treatment","study","sex","sample_id")])
+```
+
+```{r}
 # Subset metadata by sex
 meta_male <- meta_data[meta_data$sex == "M", ]
 meta_female <- meta_data[meta_data$sex == "F", ]
@@ -142,10 +177,6 @@ count_female <- count_data[, rownames(meta_female)]
 # Verify alignment
 all(colnames(count_male) == rownames(meta_male))
 all(colnames(count_female) == rownames(meta_female))
-
-all(colnames(count_data) %in% rownames(meta_data))
-all(colnames(count_data) == rownames(meta_data))
-
 ```
 ```{r}
 # Check pairing of treatment
@@ -211,26 +242,9 @@ dds_female
 dds_female <- estimateSizeFactors(dds_female)
 ```
 
-# Diagnose Source of Background Noise & Visualize Variance Structure 
-```{r}
-library(DESeq2)
-library(ggplot2)
-library(pheatmap)
+<!-- The "Diagnose Source of Background Noise & Visualize Variance Structure" step
+     was moved earlier: it now runs on the full cohort, before subsetting by sex. -->
 
-# Normalize for visualization only
-vsd <- vst(dds, blind = TRUE)
-
-# PCA — color by every potential confounder
-plotPCA(vsd, intgroup = "treatment")
-plotPCA(vsd, intgroup = "study")        # batch/sequencing date
-plotPCA(vsd, intgroup = "sex")
-plotPCA(vsd, intgroup = "sample_id")    # individual donor
-
-# Sample distance heatmap
-sampleDists <- dist(t(assay(vsd)))
-pheatmap(as.matrix(sampleDists),
-         annotation_col = meta_data[, c("treatment","study","sex","sample_id")])
-```
 
 
 # Set Reference Factor; ensure we are comparing against the control 

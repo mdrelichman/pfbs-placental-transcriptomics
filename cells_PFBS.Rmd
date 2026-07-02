@@ -300,7 +300,7 @@ hist(res.all$pvalue, breaks = 50,
 
 # Save as .rnk file for Pathway Analysis in GSEA 
 ```{r}
-ranked_list <- res.all %>%
+ranked_list <- as.data.frame(res.all) %>%   # DESeqResults -> data.frame so dplyr verbs work
   filter(!is.na(log2FoldChange)) %>%
   filter(!is.na(gene)) %>%
   filter(gene != "") %>%

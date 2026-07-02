@@ -27,7 +27,7 @@ Scripts are grouped by role. Most are R Markdown (`.Rmd`); a few are plain R (`.
 | --- | --- |
 | `cells_PFBS.Rmd` | DE analysis of HTR-8/SVneo trophoblast cells, PFBS 5 µM vs. control. |
 | `Placenta_20um_DESeq2.R` | DE analysis of term placental tissue, 20 µM (combined cohorts; paired design blocking between-donor variance, with QC diagnostics). |
-| `Term_Placenta_Combined_5.Rmd` | DE analysis of term placental tissue, 5 µM (combined cohorts). |
+| `Term_Placenta_Combined_5.Rmd` | Sex-stratified DE analysis of term placental tissue, 5 µM (combined cohorts, male/female modeled separately), **plus log2FC correlation analyses**: 5 µM vs 20 µM dose correlation within each sex, and HTR-8/SVneo cells vs male/female term tissue at 5 µM (`cor.test` + smoothScatter plots). |
 
 ### Gene set enrichment & over-representation
 | File | Purpose |

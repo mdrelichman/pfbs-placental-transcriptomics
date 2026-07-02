@@ -22,21 +22,12 @@ over-representation analysis (ORA), and cross-comparison visualization.
 
 Scripts are grouped by role. Most are R Markdown (`.Rmd`); a few are plain R (`.R`).
 
-### Transcript quantification
-| File | Purpose |
-| --- | --- |
-| `Salmon.Rmd` | Notes/commands for transcript-level quantification with Salmon (upstream of DESeq2). |
-
 ### Differential expression (DESeq2)
 | File | Purpose |
 | --- | --- |
-| `cells_PFBS.Rmd` | DE analysis of HTR-8/SVneo cells, PFBS 5 µM vs. control. |
-| `Placenta_20um_DESeq2.R` | DE analysis of placental tissue, 20 µM. |
-| `Term_Placenta_Combined_5.Rmd` | Term placenta DE, 5 µM (combined dataset). |
-| `Term_Placenta_Combined_20.Rmd` | Term placenta DE, 20 µM (combined dataset). |
-| `Term_2026_20.Rmd` | Term placenta DE, 20 µM. |
-| `Third_Trimester_20.Rmd` | Third-trimester placenta DE, 20 µM. |
-| `Term_Placenta_SVA.Rmd` | Surrogate variable analysis (SVA) to model hidden batch/technical variation. |
+| `cells_PFBS.Rmd` | DE analysis of HTR-8/SVneo trophoblast cells, PFBS 5 µM vs. control. |
+| `Placenta_20um_DESeq2.R` | DE analysis of term placental tissue, 20 µM (combined cohorts; paired design blocking between-donor variance, with QC diagnostics). |
+| `Term_Placenta_Combined_5.Rmd` | DE analysis of term placental tissue, 5 µM (combined cohorts). |
 
 ### Gene set enrichment & over-representation
 | File | Purpose |
@@ -45,18 +36,13 @@ Scripts are grouped by role. Most are R Markdown (`.Rmd`); a few are plain R (`.
 | `Gene Set Enrichment Analysis (Placenta_5).Rmd` | GSEA of placental tissue, 5 µM. |
 | `Gene Set Enrichment Analysis (Placenta_20).Rmd` | GSEA of placental tissue, 20 µM. |
 | `GSEA_Sex_Comparison_Placenta.Rmd` | GSEA comparison stratified by fetal sex. |
-| `ORA_HIF1A_female_5um.Rmd` / `ORA_HIF1A_female_5um.R` | Over-representation analysis focused on HIF1A targets (female, 5 µM). |
+| `ORA_HIF1A_female_5um.Rmd` | Over-representation analysis focused on HIF1A targets (female, 5 µM). |
 
 ### Comparison & visualization
 | File | Purpose |
 | --- | --- |
 | `Comparisons and Correlations and Heatmap.Rmd` | Cross-condition correlations and expression heatmaps. |
 | `GeneComparison.Rmd` | Overlap of differentially expressed genes across comparisons (UpSet / Venn). |
-
-### Other
-| File | Purpose |
-| --- | --- |
-| `make_cig_filter_infographic.R` | Helper script that renders a study-design infographic (not part of the core analysis). |
 
 ## Software requirements
 
@@ -66,13 +52,13 @@ Scripts are grouped by role. Most are R Markdown (`.Rmd`); a few are plain R (`.
 
 **CRAN packages:** `here`, `tidyverse` (dplyr, ggplot2, stringr, tidyr, forcats, readr, purrr, tibble),
 `readxl`, `openxlsx`, `pheatmap`, `RColorBrewer`, `ggrepel`, `UpSetR`, `ggVennDiagram`,
-`DT`, `jsonlite`, `officer`, `png`
+`DT`, `jsonlite`
 
 Install example:
 
 ```r
-install.packages(c("tidyverse","readxl","openxlsx","pheatmap","RColorBrewer",
-                   "ggrepel","UpSetR","ggVennDiagram","DT","jsonlite","officer","png"))
+install.packages(c("tidyverse","here","readxl","openxlsx","pheatmap","RColorBrewer",
+                   "ggrepel","UpSetR","ggVennDiagram","DT","jsonlite"))
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install(c("DESeq2","apeglm","AnnotationDbi","org.Hs.eg.db"))
 ```

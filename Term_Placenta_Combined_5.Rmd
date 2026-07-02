@@ -143,15 +143,17 @@ library(DESeq2)
 library(ggplot2)
 library(pheatmap)
 
-# Build a full-cohort DESeqDataSet for visualization only (blind VST ignores the design)
-dds_all <- DESeqDataSetFromMatrix(
+# Build the full-cohort DESeqDataSet (this `dds` is also used by the later
+# full-cohort diagnostics chunks that reference `dds`).
+dds <- DESeqDataSetFromMatrix(
   countData = count_data,
   colData   = meta_data,
   design    = ~ treatment
 )
+dds <- estimateSizeFactors(dds)   # populates sizeFactors(dds) for downstream QC
 
 # Normalize for visualization only
-vsd <- vst(dds_all, blind = TRUE)
+vsd <- vst(dds, blind = TRUE)
 
 # PCA — color by every potential confounder
 plotPCA(vsd, intgroup = "treatment")

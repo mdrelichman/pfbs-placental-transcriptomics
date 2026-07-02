@@ -16,6 +16,7 @@
 !LICENSE
 !*.Rmd
 !*.R
+!*.Rproj
 
 # Never commit R session/history artifacts even if they appear.
 .Rhistory

@@ -64,7 +64,7 @@ Scripts are grouped by role. Most are R Markdown (`.Rmd`); a few are plain R (`.
 
 **Bioconductor packages:** `DESeq2`, `apeglm`, `AnnotationDbi`, `org.Hs.eg.db`
 
-**CRAN packages:** `tidyverse` (dplyr, ggplot2, stringr, tidyr, forcats, readr, purrr, tibble),
+**CRAN packages:** `here`, `tidyverse` (dplyr, ggplot2, stringr, tidyr, forcats, readr, purrr, tibble),
 `readxl`, `openxlsx`, `pheatmap`, `RColorBrewer`, `ggrepel`, `UpSetR`, `ggVennDiagram`,
 `DT`, `jsonlite`, `officer`, `png`
 
@@ -79,12 +79,27 @@ BiocManager::install(c("DESeq2","apeglm","AnnotationDbi","org.Hs.eg.db"))
 
 ## Running the scripts
 
-⚠️ **File paths:** These scripts were written for the original analysis machine and
-contain **absolute Windows paths** (e.g. `C:/Users/.../Thesis/data/...`). To run them
-elsewhere, update the input/output paths near the top of each script to point at your
-own copies of the data. (A future revision may replace these with relative paths.)
+1. Clone this repository and open **`pfbs-placental-transcriptomics.Rproj`** in RStudio.
+   Opening the project sets the working directory to the repository root.
+2. Restore the exact package versions used for the analysis (see *Reproducibility* below).
+3. Recreate the expected data layout and place the input data:
+   ```
+   data/     <- input count matrices, gene sets, etc.
+   output/   <- created by the scripts (results, figures); subfolders: output/cells, output/figures, output/placenta
+   ```
+4. Open a script and run it chunk-by-chunk, or knit the `.Rmd` to HTML.
 
-Each `.Rmd` can be opened in RStudio and run chunk-by-chunk, or knitted to HTML.
+### Reproducibility
+
+- **Portable paths:** Scripts use the [`here`](https://here.r-lib.org/) package instead of
+  absolute machine paths, e.g. `here("data", "cells", "N1_5um_counts.tabular")`. Because
+  `here()` anchors to the project root, the same code runs on any computer that opens the
+  `.Rproj`. *(Path conversion is being rolled out script-by-script; `cells_PFBS.Rmd` is the
+  reference example.)*
+- **Package versions:** This project uses [`renv`](https://rstudio.github.io/renv/). After
+  opening the project, run `renv::restore()` to install the exact package versions recorded
+  in `renv.lock`.
+- **R version:** Developed with R ≥ 4.2. Run `sessionInfo()` for the full environment.
 
 ## Data availability
 

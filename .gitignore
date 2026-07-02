@@ -23,3 +23,16 @@
 .RData
 .RDataTmp
 .Rproj.user/
+
+# renv (reproducible package versions):
+# DO track the lockfile + the activation machinery, but NEVER the installed
+# package library itself (huge, machine-specific).
+!renv.lock
+!.Rprofile
+!renv/
+renv/library/
+renv/local/
+renv/cellar/
+renv/staging/
+renv/sandbox/
+renv/python/

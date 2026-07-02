@@ -29,41 +29,43 @@ BiocManager::install("DESeq2")
 library( "DESeq2" )
 library(tidyverse)
 library(ggplot2)
+library(here)   # builds file paths relative to the project root (the .Rproj folder)
 ```
 
 
 ```{r}
-# Define the file path and set working directory 
-setwd("C:/Users/Maggie Drelichman/Thesis/data/cells")
+# Point at the input folder relative to the project root -- no setwd() needed.
+# here() resolves to wherever this project lives, so it works on any computer.
+cells_dir <- here("data", "cells")
 
-# cells_1_5um 
+# cells_1_5um
 
-cells_1_5um_count_data <- read.csv('N1_5um_counts.tabular', header = TRUE, sep = "\t")
+cells_1_5um_count_data <- read.csv(file.path(cells_dir, 'N1_5um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_1_5um_count_data)[2] = "cells_1_5um"
 
-# cells_1_Control 
+# cells_1_Control
 
-cells_1_Control_count_data <- read.csv('N1_Control_counts.tabular', header = TRUE, sep = "\t")
+cells_1_Control_count_data <- read.csv(file.path(cells_dir, 'N1_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_1_Control_count_data)[2] = "cells_1_Control"
 
-# cells_2_5um 
+# cells_2_5um
 
-cells_2_5um_count_data <- read.csv('N2_5um_counts.tabular', header = TRUE, sep = "\t")
+cells_2_5um_count_data <- read.csv(file.path(cells_dir, 'N2_5um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_2_5um_count_data)[2] = "cells_2_5um"
 
-# cells_1_Control 
+# cells_1_Control
 
-cells_2_Control_count_data <- read.csv('N2_Control_counts.tabular', header = TRUE, sep = "\t")
+cells_2_Control_count_data <- read.csv(file.path(cells_dir, 'N2_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_2_Control_count_data)[2] = "cells_2_Control"
 
-# cells_3_5um 
+# cells_3_5um
 
-cells_3_5um_count_data <- read.csv('N3_5um_counts.tabular', header = TRUE, sep = "\t")
+cells_3_5um_count_data <- read.csv(file.path(cells_dir, 'N3_5um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_3_5um_count_data)[2] = "cells_3_5um"
 
-# cells_1_Control 
+# cells_1_Control
 
-cells_3_Control_count_data <- read.csv('N3_Control_counts.tabular', header = TRUE, sep = "\t")
+cells_3_Control_count_data <- read.csv(file.path(cells_dir, 'N3_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(cells_3_Control_count_data)[2] = "cells_3_Control"
 
 ```
@@ -84,7 +86,7 @@ count_data <- purrr::reduce(df_list, dplyr::full_join, by= 'Geneid')
 # make the Geneid the row id 
 count_data <- count_data %>% remove_rownames %>% column_to_rownames(var="Geneid")
 
-cells_5um_count_data_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_count_data.csv"
+cells_5um_count_data_file_path <- here("output", "cells", "cells_count_data.csv")
 write.csv(as.data.frame(count_data), file = cells_5um_count_data_file_path, row.names = TRUE)
 
 ```
@@ -213,7 +215,7 @@ p1 <- ggplot(pcaData, aes(PC1, PC2, color = treatment)) +
 ggsave(
   filename    = "Figure1a_PCA_cells.tiff",
   plot        = p1,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 4.5,
   height      = 3.5,
   units       = "in",
@@ -253,7 +255,7 @@ p2 <- ggplot(pcaData, aes(PC1, PC2, color = experiment)) +
 ggsave(
   filename    = "Figure1b_PCA_cells.tiff",
   plot        = p2,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  path        = here("output", "figures"),
   width       = 4.5,
   height      = 3.5,
   units       = "in",
@@ -282,7 +284,7 @@ rownames(res.all)<-NULL #removing non-column row names (genes)
 dim(res.all) #checking dataframe
 head(res.all)#checking dataframe
 
-log2foldchange_cells_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/results_cells_5.csv"
+log2foldchange_cells_results_file_path <- here("output", "cells", "results_cells_5.csv")
 write.csv(as.data.frame(res.all), file = log2foldchange_cells_results_file_path, row.names = TRUE)
 
 resultsNames(dds)
@@ -320,7 +322,8 @@ cat("Total genes:", nrow(ranked_list), "\n")
 
 write.table(
   ranked_list,
-  file      = "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_preranked.rnk",
+  # was on the Desktop; now written inside the project so it travels with the repo
+  file      = here("output", "cells", "cells_5_preranked.rnk"),
   sep       = "\t",          # tab separated
   row.names = FALSE,         # no row numbers
   col.names = FALSE,         # no header
@@ -333,7 +336,7 @@ cat("RNK file saved!\n")
 # Step 4 - verify file looks correct
 # open in Notepad NOT Excel to check
 verify <- read.table(
-  "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_preranked.rnk",
+  here("output", "cells", "cells_5_preranked.rnk"),
   sep = "\t",
   stringsAsFactors = FALSE
 )
@@ -382,7 +385,7 @@ write.xlsx(list(
   "Both" = both,
   "Adjusted P-Value Only" = padj_only,
   "LogFC Only" = lfc_only
-), file = "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_gene_counts_threshold_L(1.5)FC.xlsx")
+), file = here("output", "cells", "cells_5_gene_counts_threshold_L(1.5)FC.xlsx"))
 
 ```
 
@@ -609,7 +612,7 @@ volcano_plot <- ggplot(
 ggsave(
   filename    = "New_Threshold_Figure_Volcano_Cells_5uM.tiff",
   plot        = volcano_plot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 6,
   height      = 7,
   units       = "in",

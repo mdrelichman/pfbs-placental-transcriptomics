@@ -1,0 +1,24 @@
+# ==========================================================================
+# This repository publishes ANALYSIS SCRIPTS ONLY.
+#
+# Strategy: ignore everything at the top level by default, then explicitly
+# "un-ignore" (!) the script and documentation files we DO want to publish.
+# Raw data, intermediate files, figures, outputs, and manuscripts stay local
+# and are never uploaded to GitHub.
+# ==========================================================================
+
+# 1. Ignore everything in the project root by default.
+/*
+
+# 2. ...but keep these files:
+!.gitignore
+!README.md
+!LICENSE
+!*.Rmd
+!*.R
+
+# Never commit R session/history artifacts even if they appear.
+.Rhistory
+.RData
+.RDataTmp
+.Rproj.user/

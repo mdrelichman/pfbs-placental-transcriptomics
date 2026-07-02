@@ -1,0 +1,205 @@
+---
+title: "Comparisons & Correlations & Heatmap"
+output: html_document
+date: "2026-01-30"
+---
+# Comparison between Models; all genes of the cells_5uM and tissue_5uM
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+cells_5uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/cells_5_results.csv")
+tissue_5uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/results_third_5.csv")
+```
+
+```{r}
+
+####cells_5uM vs tissue_5uM####
+df_list <- list(cells_5uM_all_genes,tissue_5uM_all_genes)
+
+# merge all data frames in list
+df_list_next <- df_list %>% purrr::reduce(full_join, by='gene')
+
+df_list_next <-df_list_next[complete.cases(df_list_next), ] #removes NA's#=
+df_list_next<- na.omit(df_list_next)
+dim(df_list_next)
+
+cor.test(df_list_next$log2FoldChange.x,df_list_next$log2FoldChange.y)
+
+pdf(file = "C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/correlation_models.pdf")
+
+smoothScatter(df_list_next$log2FoldChange.x~df_list_next$log2FoldChange.y, colramp=colorRampPalette(c("white","violet")), cex=3,  xlim = c(-5, 5), ylim = c(-5, 5), main="0 (Control) vs. 5uM PFBS", xlab="Log2Fold Change (Cells-All Genes)", ylab ="Log2Fold Change (Explants-All Genes")
+
+abline(v = 0, col="gray40")
+abline(h = 0, col="gray40")
+abline(lm (df_list_next$log2FoldChange.x~df_list_next$log2FoldChange.y), col="red",lwd=c(2,3))
+dev.off()
+
+```
+
+# Hypergeometric Test between NFKB Gene Targets and Dose Response Gene List (PFBS_gene_listd)
+
+
+```{r}
+#Loading Packages & Dataframes 
+library(readr)
+PFBS_gene_list <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/shared_placenta_5um_20um_801_DEGs.csv")
+NFKB_gene_target_list <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/NFKB.csv")
+#install.packages("readxl")
+library(readxl)
+```
+
+# Comparison between NFKB Gene Targets all genes of the cells_5uM and NFKB Gene Targets and all genes tissue_5uM
+
+```{r}
+#First create dataframes with genes in both models and NFKB list
+#cells_NFKB
+intersect(cells_5uM_all_genes$gene, NFKB_gene_target_list$gene) #which gene names in common between 2 groups
+length (intersect(cells_5uM_all_genes$gene, NFKB_gene_target_list$gene)) # 145 # number of genes in common between each group
+#Create Dataframe
+cells_NFKB <- semi_join(cells_5uM_all_genes, NFKB_gene_target_list, by = "gene")
+print(cells_NFKB)
+
+#tissue_NFKB
+intersect(tissue_5uM_all_genes$gene, NFKB_gene_target_list$gene) #which gene names in common between 2 groups
+length (intersect(tissue_5uM_all_genes$gene, NFKB_gene_target_list$gene)) # 214 # number of genes in common between each group
+#Create Dataframe
+tissue_NFKB <- semi_join(tissue_5uM_all_genes, NFKB_gene_target_list, by = "gene")
+print(tissue_NFKB)
+
+```
+Intersect separate overlaps of all genes with NFKB genes and THEN run a correlation 
+```{r}
+####cells_NFKB vs tissue_NFKB####
+
+df_list_2 <-list(cells_NFKB,tissue_NFKB)
+head(cells_NFKB)
+head(tissue_NFKB)
+```
+
+```{r}
+#merge all data frames into list
+df_list_next2 <- df_list_2 %>% purrr::reduce(full_join, by='gene')
+
+df_list_next2 <-df_list_next2[complete.cases(df_list_next2),] #removes NAs
+df_list_next2 <- na.omit(df_list_next2)
+dim(df_list_next2)
+```
+
+
+```{r}
+cor.test(df_list_next2$log2FoldChange.x,df_list_next2$log2FoldChange.y)
+
+pdf(file = "C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/correlation_NFKB.pdf")
+
+smoothScatter(df_list_next2$log2FoldChange.x~df_list_next2$log2FoldChange.y, colramp=colorRampPalette(c("white","violet")), cex=3,  xlim = c(-5, 5), ylim = c(-5, 5), main="0 (Control) vs. 5uM PFBS", xlab="Log2FoldChange (Cells-NFKB Genes)", ylab ="Log2FoldChange (Explant-NFKB Genes)")
+abline(v = 0, col="gray40")
+abline(h = 0, col="gray40")
+abline(lm (df_list_next2$log2FoldChange.x~df_list_next2$log2FoldChange.y), col="red",lwd=c(2,3))
+dev.off()
+
+```
+# Determining the Number of Genes that Intersect between the Two Gene Lists: PFBS_gene_list & NFKB gene targets
+
+```{r}
+intersect(PFBS_gene_list$gene, NFKB_gene_target_list$gene) #which gene names in common between 2 groups
+length (intersect(PFBS_gene_list$gene, NFKB_gene_target_list$gene)) # 46 # number of genes in common between each group
+
+setdiff(PFBS_gene_list$gene, NFKB_gene_target_list$gene) #which genes names are in the first parameter but not second, flip parameters to get names for other parameter
+length (setdiff(PFBS_gene_list$gene, NFKB_gene_target_list$gene)) # 755
+
+setdiff(NFKB_gene_target_list$gene, PFBS_gene_list$gene)#which genes names are in the second parameter but not first, flip parameters to get names for other parameter
+length (setdiff(NFKB_gene_target_list$gene, PFBS_gene_list$gene)) # 256
+
+```
+q = For NFKB only: intersect= 46
+m = Number of DE gene FDR<0.05 and FC>1]= 801 
+n = Total number of filtered genes minus DE expressed genes; the total number of genes in the background universe (genes tested in DESeq2 after filtering)= 14439 - 801 = 13638 
+k = Number of genes in NFKB gene set= 302
+
+#q=intersect; m=#of signficant DE genes; n=[total # filterd genes-#of DE expressed genes] k=# of NFKB only genes
+```{r}
+## Hypergeometric Testing with Phyper
+# Is an overlap between my PFBS DEG set and the Preeclampsia gene set greater than expected under random sampling?
+
+phyper(46, 801, 13638, 302, lower.tail= FALSE)
+
+#p=  1.127607e-10
+
+```
+
+# Heatmap of all comparisons (N=5) 
+```{r}
+library(readxl)
+library(pheatmap)
+library(RColorBrewer)
+
+wb_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/Total_Differential_Gene_Expression_Results .xlsx"
+
+# Sheet names mapped to readable labels
+sheets <- c(
+  "Cells 5µm"    = "cells_5um",
+  "Male 5µm"     = "male_5um",
+  "Male 20µm"    = "male_20um",
+  "Female 5µm"   = "female_5um",
+  "Female 20µm"  = "female_20um"
+)
+
+# Read all sheets
+de_list <- lapply(sheets, function(s) {
+  suppressWarnings(
+    read_excel(wb_path, sheet = s,
+               col_types = c("skip", "text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+  )
+})
+
+# Collect genes significant (padj < 0.05) in at least one comparison
+# Collect all significant genes
+sig_genes <- unique(unlist(lapply(de_list, function(df) {
+  df$gene[!is.na(df$padj) & df$padj < 0.05]
+})))
+
+# Build full log2FC matrix for significant genes
+lfc_matrix <- sapply(de_list, function(df) {
+  df$log2FoldChange[match(sig_genes, df$gene)]
+})
+rownames(lfc_matrix) <- sig_genes
+colnames(lfc_matrix) <- names(sheets)
+
+# For each gene, find its most extreme LFC across any comparison
+max_lfc_per_gene <- apply(lfc_matrix, 1, function(x) max(x, na.rm = TRUE))
+min_lfc_per_gene <- apply(lfc_matrix, 1, function(x) min(x, na.rm = TRUE))
+
+# Top 50 upregulated and top 50 downregulated
+top_up   <- names(sort(max_lfc_per_gene, decreasing = TRUE))[1:50]
+top_down <- names(sort(min_lfc_per_gene, decreasing = FALSE))[1:50]
+selected_genes <- unique(c(top_up, top_down))
+
+cat("Genes in heatmap:", length(selected_genes), "\n")  # up to 100 if no overlap
+
+# Subset and replace NAs with 0 for clustering
+lfc_sub <- lfc_matrix[selected_genes, ]
+lfc_sub[is.na(lfc_sub)] <- 0
+
+# Color palette and breaks
+max_val <- max(abs(lfc_sub), na.rm = TRUE)
+breaks  <- seq(-max_val, max_val, length.out = 101)
+colors  <- colorRampPalette(rev(brewer.pal(11, "RdBu")))(100)
+
+pheatmap(
+  lfc_sub,
+  color         = colors,
+  breaks        = breaks,
+  cluster_rows  = TRUE,
+  cluster_cols  = FALSE,
+  show_rownames = TRUE,
+  fontsize_row  = 6,
+  fontsize_col  = 10,
+  main          = "Top 50 Up- and Downregulated Genes (log2FC, padj < 0.05)",
+  filename      = "C:/Users/Maggie Drelichman/Thesis/output/figures/heatmap_top50_up_down.tiff",
+  width  = 10,
+  height = 14,
+  res    = 300
+)
+```

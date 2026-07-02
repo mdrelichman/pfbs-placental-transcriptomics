@@ -1,0 +1,162 @@
+---
+title: "UpSetR"
+output: html_document
+date: "2026-05-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("UpSetR")
+library(UpSetR)
+library(dplyr)
+```
+
+```{r}
+
+# ============================================
+# Load all five results files
+# ============================================
+
+male_placenta_5uM   <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_5um_26.csv")
+male_placenta_20uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_20um_26.csv")
+female_placenta_5uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_5um_26.csv")
+female_placenta_20uM <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_20um_26.csv")
+cells_5um <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/cells/results_cells_5.csv")
+```
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install("AnnotationDbi")
+```
+
+```{r}
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(dplyr)  # load last so dplyr::select wins
+
+# Re-run annotation
+gene_annotations <- AnnotationDbi::select(   # explicit namespace for AnnotationDbi
+  org.Hs.eg.db,
+  keys    = all_deg_genes,
+  columns = c("SYMBOL", "GENENAME", "ENTREZID"),
+  keytype = "SYMBOL"
+) %>%
+  dplyr::rename(gene = SYMBOL)
+
+# Now dplyr::select will work correctly in the rest of the code
+up_annotated <- upset_up %>%
+  left_join(gene_annotations, by = "gene") %>%
+  mutate(
+    n_comparisons = rowSums(across(all_of(sets))),
+    shared = ifelse(n_comparisons > 1, "Shared", "Unique")
+  ) %>%
+  arrange(desc(n_comparisons), gene) %>%
+  dplyr::select(gene, GENENAME, all_of(sets), n_comparisons, shared)
+
+dn_annotated <- upset_dn %>%
+  left_join(gene_annotations, by = "gene") %>%
+  mutate(
+    n_comparisons = rowSums(across(all_of(sets))),
+    shared = ifelse(n_comparisons > 1, "Shared", "Unique")
+  ) %>%
+  arrange(desc(n_comparisons), gene) %>%
+  dplyr::select(gene, GENENAME, all_of(sets), n_comparisons, shared)
+
+# Print shared genes with annotations
+cat("=== SHARED UPREGULATED GENES (>1 comparison) ===\n")
+up_annotated %>% filter(shared == "Shared") %>% as.data.frame() %>% print()
+
+cat("\n=== SHARED DOWNREGULATED GENES (>1 comparison) ===\n")
+dn_annotated %>% filter(shared == "Shared") %>% as.data.frame() %>% print()
+
+# Save annotated tables
+write.csv(up_annotated,
+  "C:/Users/Maggie Drelichman/Thesis/output/placenta/DEG_annotated_upregulated.csv",
+  row.names = FALSE)
+write.csv(dn_annotated,
+  "C:/Users/Maggie Drelichman/Thesis/output/placenta/DEG_annotated_downregulated.csv",
+  row.names = FALSE)
+
+cat("\nAnnotated tables saved.\n")
+```
+
+```{r}
+#install.packages("ggVennDiagram")
+library(ggVennDiagram)
+library(ggplot2)
+
+# ============================================================
+# Venn 1 — Male tissue: upregulated at 5uM AND 20uM
+# ============================================================
+
+fig_venn_male_up <- list(
+  "Male 5µM"  = male_5_up,
+  "Male 20µM" = male_20_up
+)
+
+fig_venn_male <- ggVennDiagram(
+  venn_male_up,
+  label_alpha = 0
+) +
+  scale_fill_gradient(low = "white", high = "#5B8DB8") +
+  labs(title = "Upregulated DEGs: Male Placental Tissue") +
+  theme(
+    plot.title      = element_text(hjust = 0.5, face = "bold", size = 11),
+    legend.position = "none"
+  ) +
+  scale_x_continuous(expand = expansion(mult = 0.3))
+
+ggsave(
+  filename    = "Supplemental_Venn_Male_Upregulated.tiff",
+  plot        = fig_venn_male,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 8, height = 5, units = "in",
+  dpi         = 300, device = "tiff", compression = "lzw"
+)
+
+# ============================================================
+# Venn 2 — Female tissue: downregulated at 5uM AND 20uM
+# ============================================================
+
+venn_female_dn <- list(
+  "Female 5µM"  = female_5_dn,
+  "Female 20µM" = female_20_dn
+)
+
+fig_venn_female <- ggVennDiagram(
+  venn_female_dn,
+  label_alpha = 0
+) +
+  scale_fill_gradient(low = "white", high = "#E07BA0") +
+  labs(title = "Downregulated DEGs: Female Placental Tissue") +
+  theme(
+    plot.title  = element_text(hjust = 0.5, face = "bold", size = 11),
+    legend.position = "none",
+    plot.margin = margin(t=10, b = 10, l = 60, unit = "pt")
+  )
+
+print(fig_venn_female)
+
+ggsave(
+  filename    = "Supplemental_Venn_Female_Downregulated.tiff",
+  plot        = fig_venn_female,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 8, height = 5, units = "in",
+  dpi         = 300, device = "tiff", compression = "lzw"
+)
+
+# Print the actual shared genes
+cat("=== MALE: Upregulated at both doses ===\n")
+print(intersect(male_5_up, male_20_up))
+
+cat("\n=== FEMALE: Downregulated at both doses ===\n")
+print(intersect(female_5_dn, female_20_dn))
+
+cat("\n=== VENN DIAGRAMS SAVED ===\n")
+```

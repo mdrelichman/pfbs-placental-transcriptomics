@@ -1,0 +1,10 @@
+---
+title: "Salmon"
+output: html_document
+date: "2026-02-02"
+---
+
+```{r}
+install.packages("edgeR")
+```
+

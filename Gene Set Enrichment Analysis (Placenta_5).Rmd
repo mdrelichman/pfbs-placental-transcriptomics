@@ -1,0 +1,832 @@
+---
+title: "Gene_Set_Enrichment_Analysis_Placenta_5"
+output: html_document
+date: "2026-05-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# ============================================
+# STEP 1 — Read all six TSV files
+# (positive and negative for each
+# of your 3 databases)
+# ============================================
+
+# Set your base path
+# UPDATE THIS to your actual GSEA output folders
+tissue_5_female_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_5_H"
+tissue_5_female_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_5_G"
+tissue_5_female_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_5_K"
+
+
+tissue_5_male_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_5_H"
+tissue_5_male_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_5_G"
+tissue_5_male_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_5_K"
+
+```
+
+
+```{r}
+# Read Female Hallmark results
+hallmark_pos_female_5 <- read.delim(
+  paste0(tissue_5_female_hallmark_path,"/",
+         "gsea_report_for_na_pos_1778543026871.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Upregulated")
+
+hallmark_neg_female_5 <- read.delim(
+  paste0(tissue_5_female_hallmark_path,"/",
+         "gsea_report_for_na_neg_1778543026871.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Downregulated")
+
+# Read Male Hallmark results
+hallmark_pos_male_5 <- read.delim(
+  paste0(tissue_5_male_hallmark_path,"/",
+         "gsea_report_for_na_pos_1778542129507.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Upregulated")
+
+hallmark_neg_male_5 <- read.delim(
+  paste0(tissue_5_male_hallmark_path,"/",
+         "gsea_report_for_na_neg_1778542129507.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Downregulated")
+
+# Read Female GOBP results
+gobp_pos_female_5 <- read.delim(
+  paste0(tissue_5_female_gobp_path,"/",
+         "gsea_report_for_na_pos_1778542529373.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Upregulated")
+
+gobp_neg_female_5 <- read.delim(
+  paste0(tissue_5_female_gobp_path,"/",
+         "gsea_report_for_na_neg_1778542529373.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Downregulated")
+
+# Read Male GOBP results
+gobp_pos_male_5 <- read.delim(
+  paste0(tissue_5_male_gobp_path,"/",
+         "gsea_report_for_na_pos_1778542187468.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Upregulated")
+
+gobp_neg_male_5 <- read.delim(
+  paste0(tissue_5_male_gobp_path,"/",
+         "gsea_report_for_na_neg_1778542187468.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Downregulated")
+
+# Read Female KEGG results
+kegg_pos_female_5 <- read.delim(
+  paste0(tissue_5_female_kegg_path,"/",
+         "gsea_report_for_na_pos_1778542839044.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Upregulated")
+
+kegg_neg_female_5 <- read.delim(
+  paste0(tissue_5_female_kegg_path,"/",
+         "gsea_report_for_na_neg_1778542839044.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Downregulated")
+
+# Read Male KEGG results
+kegg_pos_male_5 <- read.delim(
+  paste0(tissue_5_male_kegg_path,"/",
+         "gsea_report_for_na_pos_1778542156557.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Upregulated")
+
+kegg_neg_male_5 <- read.delim(
+  paste0(tissue_5_male_kegg_path,"/",
+         "gsea_report_for_na_neg_1778542156557.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Downregulated")
+```
+
+```{r}
+# ============================================
+# STEP 2 — Combine all results
+# ============================================
+
+tissue_gsea_5 <- bind_rows(
+  hallmark_pos_female_5 %>% mutate(sex = "Female"),
+  hallmark_neg_female_5 %>% mutate(sex = "Female"),
+  hallmark_pos_male_5   %>% mutate(sex = "Male"),
+  hallmark_neg_male_5   %>% mutate(sex = "Male"),
+  gobp_pos_female_5     %>% mutate(sex = "Female"),
+  gobp_neg_female_5     %>% mutate(sex = "Female"),
+  gobp_pos_male_5       %>% mutate(sex = "Male"),
+  gobp_neg_male_5       %>% mutate(sex = "Male"),
+  kegg_pos_female_5     %>% mutate(sex = "Female"),
+  kegg_neg_female_5     %>% mutate(sex = "Female"),
+  kegg_pos_male_5       %>% mutate(sex = "Male"),
+  kegg_neg_male_5       %>% mutate(sex = "Male")
+)
+
+colnames(tissue_gsea_5)
+# Check column names
+
+```
+
+```{r}
+# ============================================
+# STEP 3 — Filter significant pathways (sorted by NES)
+# ============================================
+
+sig_gsea_tissue_5 <- tissue_gsea_5 %>%
+  filter(FDR.q.val < 0.1) %>%
+  arrange(database, desc(NES))
+
+cat("Total significant pathways:", nrow(sig_gsea_tissue_5), "\n")
+cat("\nBreakdown by database:\n")
+print(table(sig_gsea_tissue_5$database, sig_gsea_tissue_5$direction, sig_gsea_tissue_5$sex))
+print(table(sig_gsea_tissue_5$database, sig_gsea_tissue_5$direction))
+```
+
+# NES Plots Per Collection 
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+
+# --- Settings ----------------------------------------------------------------
+top_n    <- 20
+col_up   <- "#2980B9"
+col_down <- "#C0392B"
+
+# --- Prepare data ------------------------------------------------------------
+# --- Prepare data split by sex -----------------------------------------------
+gsea_clean_female_5 <- sig_gsea_tissue_5 %>%
+  filter(sex == "Female") %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^GOBP ") %>%
+      str_remove("^HALLMARK ") %>%
+      str_remove("^KEGG ") %>%
+      str_to_title() %>%
+      str_wrap(width = 45),
+    direction = factor(direction, levels = c("Upregulated", "Downregulated"))
+  )
+
+gsea_clean_male_5 <- sig_gsea_tissue_5 %>%
+  filter(sex == "Male") %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^HALLMARK ") %>%
+      str_remove("^GOBP ") %>%
+      str_remove("^KEGG ") %>%
+      str_to_title() %>%
+      str_wrap(width = 45),
+    direction = factor(direction, levels = c("Upregulated", "Downregulated"))
+  )
+
+# --- Plot function (unchanged) ------------------------------------------------
+plot_nes <- function(df, db, sex_label) {
+  
+  plot_df <- df %>%
+    filter(database == db) %>%
+    arrange(desc(abs(NES))) %>%
+    slice_head(n = top_n) %>%
+    mutate(pathway_label = fct_reorder(pathway_label, NES))
+  
+  x_max <- ceiling(max(abs(plot_df$NES), na.rm = TRUE) + 0.5)
+  
+  ggplot(plot_df, aes(x = NES, y = pathway_label, fill = direction)) +
+    geom_vline(xintercept = 0, color = "grey40", linewidth = 0.5) +
+    geom_col(width = 0.75, alpha = 0.9) +
+    geom_text(
+      aes(
+        label = paste0("FDR=", formatC(FDR.q.val, format = "e", digits = 1)),
+        hjust = ifelse(NES > 0, -0.08, 1.08)
+      ),
+      size = 2.7, color = "grey30"
+    ) +
+    scale_fill_manual(
+      values = c("Upregulated" = col_up, "Downregulated" = col_down),
+      name = "Direction", drop = FALSE
+    ) +
+    scale_x_continuous(
+      limits = c(-x_max, x_max),
+      expand = expansion(mult = c(0.01, 0.25))
+    ) +
+    labs(
+      title = paste0(sex_label, " — ", db, " GSEA Normalized Enrichment Scores"),
+      x = "Normalized Enrichment Score (NES)",
+      y = NULL
+    ) +
+    theme_classic(base_size = 12) +
+    theme(
+      plot.title         = element_text(face = "bold", size = 13),
+      axis.text.y        = element_text(size = 9, color = "black"),
+      panel.grid.major.x = element_line(color = "grey90", linewidth = 0.4),
+      legend.position    = "bottom",
+      plot.margin        = margin(10, 20, 10, 10)
+    )
+}
+
+# --- Generate plots ----------------------------------------------------------
+
+# Female — all three collections
+p_female_gobp_5     <- plot_nes(gsea_clean_female_5, "GOBP",     "Female")
+p_female_hallmark_5 <- plot_nes(gsea_clean_female_5, "Hallmark", "Female")
+p_female_kegg_5     <- plot_nes(gsea_clean_female_5, "KEGG",     "Female")
+
+# Male — all three collections
+p_male_hallmark_5   <- plot_nes(gsea_clean_male_5,   "Hallmark", "Male")
+p_male_gobp_5     <- plot_nes(gsea_clean_male_5, "GOBP",     "Male")
+p_male_kegg_5     <- plot_nes(gsea_clean_male_5, "KEGG",     "Male")
+
+print(p_female_gobp_5)
+print(p_female_hallmark_5)
+print(p_female_kegg_5)
+print(p_male_hallmark_5)
+print(p_male_gobp_5)
+print(p_male_kegg_5)
+
+# --- Save --------------------------------------------------------------------
+ggsave("Figure_GSEA_5_Female_GOBP_NES.tiff",     p_female_gobp_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+ggsave("Figure_GSEA_5_Female_Hallmark_NES.tiff", p_female_hallmark_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+ggsave("Figure_GSEA_5_Female_KEGG_NES.tiff",     p_female_kegg_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+ggsave("Figure_GSEA_5_Male_Hallmark_NES.tiff",   p_male_hallmark_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+ggsave("Figure_GSEA_5_Male_GOBP_NES.tiff",       p_male_gobp_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+ggsave("Figure_GSEA_5_Male_KEGG_NES.tiff",       p_male_kegg_5,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
+
+write.csv(
+  sig_gsea_tissue_5,
+  file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/sig_gsea_placenta_5.csv",
+  row.names = FALSE
+)
+```
+```{r}
+ls()
+```
+
+
+```{r}
+# ============================================
+# View upregulated pathways first
+# (only 20 — manageable to look at all)
+# ============================================
+
+cat("=== UPREGULATED PATHWAYS (n=20) ===\n")
+up_pathways <- sig_gsea %>%
+  filter(direction == "Upregulated") %>%
+  arrange(desc(NES)) %>%
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, database)
+
+View(up_pathways)
+
+# ============================================
+# View top downregulated pathways
+# Sort by most negative NES
+# ============================================
+
+cat("\n=== TOP 30 DOWNREGULATED PATHWAYS ===\n")
+down_pathways <- sig_gsea %>%
+  filter(direction == "Downregulated") %>%
+  arrange(NES) %>%     # most negative first
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, database) %>%
+  head(30)
+
+View(down_pathways)
+
+# ============================================
+# View Hallmark specifically
+# Most interpretable database
+# Good starting point for story
+# ============================================
+
+cat("\n=== HALLMARK RESULTS ===\n")
+hallmark_sig <- sig_gsea %>%
+  filter(database == "Hallmark") %>%
+  arrange(NES) %>%
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, direction)
+
+View(hallmark_sig)
+
+# ============================================
+# SAVE ALL TO CSV — easiest to work with
+# ============================================
+
+write.csv(
+  gsea_clean_female %>%
+    arrange(database,
+            direction,
+            desc(abs(NES))) %>%
+    select(NAME, NES, NOM.p.val,
+           FDR.q.val, SIZE,
+           LEADING.EDGE,
+           database, direction),
+  file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_GSEA_significant_pathways.csv",
+  row.names = FALSE
+)
+
+cat("CSV saved! Open in Excel to explore.\n")
+
+```
+# Creating NES Bar Charts- One Per Collection 
+
+```{r}
+
+```
+
+```{r}
+# Get complete list of all pathway names to assign biological themes correctly 
+# All upregulated pathways
+cat("=== ALL UPREGULATED PATHWAYS ===\n")
+all_up <-  gsea_clean_female %>%
+  filter(direction == "Upregulated") %>%
+  arrange(desc(NES)) %>%
+  select(NAME, NES, FDR.q.val, database)
+
+write.csv(
+  all_up,
+  "C:/Users/Maggie Drelichman/Thesis/output/placenta/5_female_all_upregulated_pathways.csv",
+  row.names = FALSE
+)
+
+# All downregulated pathways
+cat("=== ALL DOWNREGULATED PATHWAYS ===\n")
+all_down <-  gsea_clean_female %>%
+  filter(direction == "Downregulated") %>%
+  arrange(NES) %>%
+  select(NAME, NES, FDR.q.val, database)
+
+write.csv(
+  all_down,
+  "C:/Users/Maggie Drelichman/Thesis/output/placenta/5_female_all_downregulated_pathways.csv",
+  row.names = FALSE
+)
+
+cat("Both CSVs saved!\n")
+cat("Upregulated pathways:", nrow(all_up), "\n")
+cat("Downregulated pathways:", nrow(all_down), "\n")
+
+```
+```{r}
+# ============================================
+# EXTRACT KEYWORDS FROM PATHWAY NAMES
+# Helps you see what themes naturally
+# emerge from YOUR specific data
+# ============================================
+
+# Get all pathway names
+all_names <-  gsea_clean_female$NAME
+
+# Remove database prefix
+# (HALLMARK_, GOBP_, KEGG_)
+clean_names <- all_names %>%
+  str_remove("^HALLMARK_") %>%
+  str_remove("^GOBP_") %>%
+  str_remove("^KEGG_")
+
+# Split into individual words
+all_words <- clean_names %>%
+  str_split("_") %>%
+  unlist() %>%
+  tolower() %>%
+  # Remove very common uninformative words
+  .[!. %in% c("of", "to", "in", "the",
+               "and", "or", "via", "by",
+               "with", "from", "a", "an",
+               "process", "regulation",
+               "positive", "negative",
+               "involved", "response",
+               "dependent", "mediated",
+               "pathway", "signaling",
+               "activity", "based")] %>%
+  table() %>%
+  sort(decreasing = TRUE)
+
+# Show top 50 most common words
+cat("=== TOP 50 KEYWORDS IN YOUR PATHWAYS ===\n")
+print(head(all_words, 50))
+```
+```{r}
+# Print all pathway names cleanly
+# ============================================================
+# Print significant pathway names by sex, direction, database
+# ============================================================
+
+cat("=== FEMALE 5uM SIGNIFICANT PATHWAYS ===\n\n")
+
+for (db in c("GOBP", "Hallmark", "KEGG")) {
+  for (dir in c("Upregulated", "Downregulated")) {
+    paths <- sig_gsea %>%
+      filter(sex == "Female", database == db, direction == dir) %>%
+      arrange(desc(abs(NES))) %>%
+      pull(NAME)
+    if (length(paths) > 0) {
+      cat(sprintf("--- Female | %s | %s (%d) ---\n", db, dir, length(paths)))
+      cat(paste0("  ", paths, collapse = "\n"), "\n\n")
+    }
+  }
+}
+
+cat("\n=== MALE 5uM SIGNIFICANT PATHWAYS ===\n\n")
+
+for (db in c("GOBP", "Hallmark", "KEGG")) {
+  for (dir in c("Upregulated", "Downregulated")) {
+    paths <- sig_gsea %>%
+      filter(sex == "Male", database == db, direction == dir) %>%
+      arrange(desc(abs(NES))) %>%
+      pull(NAME)
+    if (length(paths) > 0) {
+      cat(sprintf("--- Male | %s | %s (%d) ---\n", db, dir, length(paths)))
+      cat(paste0("  ", paths, collapse = "\n"), "\n\n")
+    }
+  }
+}
+```
+
+```{r}
+# ============================================
+# ASSIGN BIOLOGICAL THEMES
+# Built from your actual pathway names
+# ============================================
+
+sig_gsea_themed <- sig_gsea %>%
+  mutate(
+    theme = case_when(
+
+      # ----------------------------------------
+      # THEME 1 — Immune & Inflammatory Activation
+      # TNFα, NF-κB, cytokines, NOD receptors,
+      # JAK-STAT, hematopoietic, allograft (Hallmark)
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "TNFA_SIGNALING|INFLAMMATORY_RESPONSE|",
+        "NOD_LIKE_RECEPTOR|CYTOKINE|",
+        "HEMATOPOIETIC|JAK_STAT|",
+        "HALLMARK_ALLOGRAFT|KRAS_SIGNALING_UP|",
+        "INTERLEUKIN|CHEMOTAXIS|",
+        "INNATE_IMMUNE|COMPLEMENT|",
+        "COAGULATION|GRANULOCYTE|",
+        "MACROPHAGE|NEUTROPHIL|",
+        "NATURAL_KILLER|DENDRITIC"
+      )) ~ "Immune &\nInflammatory Activation",
+
+      # ----------------------------------------
+      # THEME 2 — T Cell & Lymphocyte Development
+      # Separate from general immune — large GOBP group
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "T_CELL|THYMOCYTE|T_HELPER|",
+        "REGULATORY_T|CD4_POSITIVE|",
+        "CD8_POSITIVE|ALPHA_BETA_T|",
+        "T_CELL_LINEAGE|T_CELL_SELECTION|",
+        "LYMPHOCYTE|LEUKOCYTE_DIFFER|",
+        "ADAPTIVE_IMMUNE"
+      )) ~ "T Cell &\nLymphocyte Development",
+
+      # ----------------------------------------
+      # THEME 3 — Interferon & Antigen Response (DOWN)
+      # Interferon alpha/gamma, antigen processing,
+      # autoimmune thyroid, KEGG allograft
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "INTERFERON|ANTIGEN_PROCESSING|",
+        "AUTOIMMUNE|MHC|ANTIVIRAL|",
+        "KEGG_ALLOGRAFT|PRION"
+      )) ~ "Interferon &\nAntigen Response",
+
+      # ----------------------------------------
+      # THEME 4 — Hormonal & Reproductive
+      # Estrogen, ovulation, gonadotropin,
+      # sex differentiation — all female-specific
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "ESTROGEN|ANDROGEN|OVULATION|",
+        "GONADOTROPIN|SEX_DIFFERENTIATION|",
+        "FEMALE_SEX|MALE_SEX|",
+        "REPRODUCTIVE|PROGESTERONE|",
+        "PROLACTIN|HORMONE_METABOL"
+      )) ~ "Hormonal &\nReproductive",
+
+      # ----------------------------------------
+      # THEME 5 — Smooth Muscle, Vascular & Cardiac
+      # Must come BEFORE Development to catch
+      # smooth muscle differentiation pathways
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "SMOOTH_MUSCLE|VASCULAR_SMOOTH|",
+        "MUSCLE_CONTRACTION|MYOGENESIS|",
+        "MUSCLE_HYPERTROPHY|STRIATED_MUSCLE|",
+        "CARDIAC|ENDOCARDIAL|VALVE|",
+        "ANGIOGEN|BLOOD_VESSEL|",
+        "VASODILATION|HEART_MORPHO|",
+        "HEART_DEVELOPMENT"
+      )) ~ "Smooth Muscle,\nVascular & Cardiac",
+
+      # ----------------------------------------
+      # THEME 6 — Development & Organogenesis
+      # Dominant GOBP upregulated theme —
+      # embryonic, morphogenesis, organ, cell fate
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "EMBRYONIC|MORPHOGENESIS|",
+        "ORGAN_INDUCTION|DEVELOPMENTAL_INDUCTION|",
+        "MESENCHYME|MESENCHYMAL_CELL|",
+        "CELL_FATE|AXIS_ELONGATION|",
+        "PROXIMAL_DISTAL|ORGAN_IDENTITY|",
+        "ORGAN_FORMATION|ORGAN_DEVELOPMENT|",
+        "BRANCH_ELONGATION|PATTERN_FORMATION|",
+        "ORGANOGENESIS|GASTRULATION|",
+        "TISSUE_MORPHOGENESIS|",
+        "ANIMAL_ORGAN_MORPHOGENESIS|",
+        "ANIMAL_ORGAN_DEVELOPMENT|",
+        "DIGESTIVE_TRACT_DEVELOPMENT|",
+        "GLAND_DEVELOPMENT|LIMB_DEVELOP|",
+        "KIDNEY_DEVELOP|LUNG_DEVELOP|",
+        "SPECIFICATION|INDUCTION|",
+        "CELL_DIFFERENTIATION|SOMITO"
+      )) ~ "Development &\nOrganogenesis",
+
+      # ----------------------------------------
+      # THEME 7 — Cell Growth, Proliferation & Signaling
+      # MYC, E2F, mTORC1, KRAS, cell cycle,
+      # STAT signaling, cell adhesion (trophoblast)
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "MYC_TARGETS|E2F_TARGETS|MTORC1|",
+        "CELL_PROLIFERATION|CELL_MIGRATION|",
+        "CELL_GROWTH|CELL_CYCLE|",
+        "RECEPTOR_SIGNALING_VIA_STAT|",
+        "GROWTH_FACTOR|APOPTOSIS|",
+        "PI3K|WNT|NOTCH|TGF_BETA|",
+        "HEDGEHOG|CELL_ADHESION|",
+        "SPLICEOSOM"
+      )) ~ "Cell Growth,\nProliferation & Signaling",
+
+      # ----------------------------------------
+      # THEME 8 — Hypoxia & Oxidative Stress
+      # Upregulated in MALE, downregulated in FEMALE
+      # Key sex-specific reversal finding
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "HYPOXIA|REACTIVE_OXYGEN|",
+        "OXIDATIVE_STRESS|UV_RESPONSE|",
+        "RESPONSE_TO_HYPOXIA|HIF"
+      )) ~ "Hypoxia &\nOxidative Stress",
+
+      # ----------------------------------------
+      # THEME 9 — Metabolic Suppression (DOWN female)
+      # Glycolysis, fatty acids, amino acids,
+      # lipid biosynthesis, xenobiotic
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "GLYCOLYSIS|GLUCONEOGENESIS|",
+        "FATTY_ACID|BILE_ACID|",
+        "CHOLESTEROL|XENOBIOTIC|",
+        "PEROXISOME|DRUG_METABOL|",
+        "HISTIDINE|LYSINE_DEGRAD|",
+        "ARGININE|GLYCINE_SERINE|",
+        "BIOSYNTHESIS_OF_UNSATURATED|",
+        "GLYCEROLIPID|GPI_ANCHOR|",
+        "N_GLYCAN|GLYCAN_BIOSYN|",
+        "AMINO_ACID_CATABOL|",
+        "OXIDATIVE_PHOSPHORYLATION|",
+        "CARBON_METABOL|LIPID_METABOL"
+      )) ~ "Metabolic\nSuppression",
+
+      # ----------------------------------------
+      # THEME 10 — RNA Processing & Ribosome Biogenesis
+      # rRNA maturation LSU/SSU — large GOBP group
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "RRNA|RIBOSOM|RNA_SPLICING|",
+        "RNA_PROCESSING|MATURATION_OF_LSU|",
+        "MATURATION_OF_SSU|TRNA_PROCESS|",
+        "MRNA_PROCESS|RNA_CATABOL"
+      )) ~ "RNA Processing &\nRibosome Biogenesis",
+
+      # ----------------------------------------
+      # THEME 11 — Calcium & Ion Transport
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "CALCIUM_ION|CALCIUM_IMPORT|",
+        "ION_IMPORT|ION_TRANSPORT|",
+        "POTASSIUM_ION|SODIUM_ION|",
+        "CALCIUM_SIGNALING|",
+        "INTRACELLULAR_CALCIUM"
+      )) ~ "Calcium &\nIon Transport",
+
+      # ----------------------------------------
+      # THEME 12 — Protein Processing & Lysosome
+      # ----------------------------------------
+      str_detect(NAME, paste0(
+        "LYSOSOME|PROTEASOM|",
+        "UNFOLDED_PROTEIN|AUTOPHAGY|",
+        "UBIQUITIN|PROTEIN_CATABOL"
+      )) ~ "Protein Processing\n& Lysosome",
+
+      TRUE ~ "Other"
+    )
+  )
+
+# ============================================
+# VERIFY — Breakdown by theme AND sex
+# ============================================
+
+cat("=== THEME ASSIGNMENT SUMMARY BY SEX ===\n")
+print(table(sig_gsea_themed$theme, sig_gsea_themed$sex))
+
+cat("\n=== CHECK FOR UNASSIGNED PATHWAYS ===\n")
+unassigned <- sig_gsea_themed %>%
+  filter(theme == "Other") %>%
+  select(NAME, database, direction, sex)
+
+if (nrow(unassigned) == 0) {
+  cat("All pathways successfully assigned!\n")
+} else {
+  cat("WARNING:", nrow(unassigned), "pathways not assigned:\n")
+  print(unassigned)
+}
+
+cat("\n=== PATHWAYS BY THEME ===\n")
+sig_gsea_themed %>%
+  select(NAME, theme, direction, sex, NES, database) %>%
+  arrange(theme, sex, direction, desc(abs(NES))) %>%
+  group_by(theme) %>%
+  group_walk(~ {
+    cat("\n---", .y$theme, "---\n")
+    print(as.data.frame(.x[, c("NAME", "NES", "direction", "sex", "database")]))
+  })
+
+```
+
+```{r}
+# Just run this part first
+cat("=== THEME ASSIGNMENT SUMMARY ===\n")
+print(table(sig_gsea_themed$theme))
+
+cat("\n=== UNASSIGNED PATHWAYS ===\n")
+unassigned <- sig_gsea_themed %>%
+  filter(theme == "Other") %>%
+  select(NAME, database, direction)
+print(unassigned)
+```
+
+```{r}
+# ============================================
+# STEP 7 — Make a dot plot by theme
+# ============================================
+
+# ============================================
+# DOT PLOT — Female (main figure)
+# Top 2 per theme per direction
+# ============================================
+
+top_female <- sig_gsea_themed %>%
+  filter(sex == "Female") %>%
+  group_by(theme, direction) %>%
+  slice_max(order_by = abs(NES), n = 2, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(
+    NAME_clean = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^(HALLMARK |KEGG |GOBP )") %>%
+      str_to_title() %>%
+      str_wrap(width = 40)
+  )
+
+dot_plot_female <- ggplot(
+  top_female,
+  aes(x     = NES,
+      y     = reorder(NAME_clean, NES),
+      color = direction,
+      size  = -log10(FDR.q.val + 1e-4))
+) +
+  geom_point(alpha = 0.85) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(
+    values = c("Upregulated" = "#2980B9", "Downregulated" = "#C0392B"),
+    name   = "Direction"
+  ) +
+  scale_size_continuous(name = "-Log10(FDR)", range = c(2, 7)) +
+  facet_wrap(~ theme, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Female Placenta — GSEA Results by Biological Theme\n20uM PFBS vs. Control",
+    x     = "Normalized Enrichment Score (NES)",
+    y     = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    plot.title  = element_text(hjust = 0.5, size = 12, face = "bold"),
+    axis.text.y = element_text(size = 7.5, color = "black"),
+    strip.text  = element_text(face = "bold", size = 8),
+    legend.position = "bottom"
+  )
+
+print(dot_plot_female)
+
+ggsave(
+  filename    = "Figure_GSEA_Female_Themes_Dotplot.tiff",
+  plot        = dot_plot_female,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 12,
+  height      = 14,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+# ============================================
+# DOT PLOT — Male (3 pathways only)
+# ============================================
+
+male_plot_data <- sig_gsea_themed %>%
+  filter(sex == "Male") %>%
+  mutate(
+    NAME_clean = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^HALLMARK ") %>%
+      str_to_title()
+  )
+
+dot_plot_male <- ggplot(
+  male_plot_data,
+  aes(x     = NES,
+      y     = reorder(NAME_clean, NES),
+      color = direction,
+      size  = -log10(FDR.q.val + 1e-4))
+) +
+  geom_point(alpha = 0.85) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(
+    values = c("Upregulated" = "#2980B9", "Downregulated" = "#C0392B"),
+    name   = "Direction"
+  ) +
+  scale_size_continuous(name = "-Log10(FDR)", range = c(4, 9)) +
+  labs(
+    title = "Male Placenta — GSEA Significant Pathways\n20uM PFBS vs. Control (Hallmark only)",
+    x     = "Normalized Enrichment Score (NES)",
+    y     = NULL
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    plot.title      = element_text(hjust = 0.5, size = 12, face = "bold"),
+    axis.text.y     = element_text(size = 11, color = "black"),
+    legend.position = "bottom"
+  )
+
+print(dot_plot_male)
+
+ggsave(
+  filename    = "Figure_GSEA_Male_Themes_Dotplot.tiff",
+  plot        = dot_plot_male,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 7,
+  height      = 4,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+

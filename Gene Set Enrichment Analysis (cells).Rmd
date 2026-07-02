@@ -1,0 +1,1289 @@
+---
+title: "Gene_Set_Enrichment_Analysis_Cells"
+output: html_document
+date: "2026-04-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# ============================================
+# STEP 1 — Read all six TSV files
+# (positive and negative for each
+# of your 3 databases)
+# ============================================
+
+# Set your base path
+# UPDATE THIS to your actual GSEA output folders
+cells_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_H/HTR8_5um_PFBS_Hallmark"
+cells_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_G/HTR8_5um_PFBS_GOBP"
+cells_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_K/HTR8_5um_PFBS_KEGG"
+
+# Read Hallmark results
+cells_hallmark_pos <- read.delim(
+  paste0(cells_hallmark_path,"/",
+         "gsea_report_for_na_pos_1777585400424.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Upregulated")
+
+cells_hallmark_neg <- read.delim(
+  paste0(cells_hallmark_path,"/",
+         "gsea_report_for_na_neg_1777585400424.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "Hallmark",
+              direction = "Downregulated")
+
+# Read GOBP results
+cells_gobp_pos <- read.delim(
+  paste0(cells_gobp_path,"/",
+         "gsea_report_for_na_pos_1777590906516.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Upregulated")
+
+cells_gobp_neg <- read.delim(
+  paste0(cells_gobp_path,"/",
+         "gsea_report_for_na_neg_1777590906516.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "GOBP",
+              direction = "Downregulated")
+
+# Read KEGG results
+cells_kegg_pos <- read.delim(
+  paste0(cells_kegg_path,"/",
+         "gsea_report_for_na_pos_1777591765582.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Upregulated")
+
+cells_kegg_neg <- read.delim(
+  paste0(cells_kegg_path,"/",
+         "gsea_report_for_na_neg_1777591765582.tsv"),
+  stringsAsFactors = FALSE
+) %>% mutate(database = "KEGG",
+              direction = "Downregulated")
+```
+
+```{r}
+# ============================================
+# STEP 2 — Combine all results
+# ============================================
+
+gsea_cells <- bind_rows(
+  cells_hallmark_pos, cells_hallmark_neg,
+  cells_gobp_pos,     cells_gobp_neg,
+  cells_kegg_pos,     cells_kegg_neg
+)
+
+# Check column names
+colnames(gsea_cells)
+```
+
+```{r}
+# ============================================
+# STEP 3 — Filter significant pathways (sorted by NES)
+# ============================================
+
+sig_gsea_cells <- gsea_cells %>%
+  filter(FDR.q.val < 0.1) %>%
+  arrange(database, desc(NES))
+
+cat("Total significant pathways:", nrow(sig_gsea_cells), "\n")
+cat("\nBreakdown by database:\n")
+print(table(sig_gsea_cells$database, sig_gsea_cells$direction))
+```
+# NES Plots Per Collection 
+```{r}
+# =============================================================================
+# GSEA NES Bar Charts — One Per Collection
+# =============================================================================
+
+library(tidyverse)
+library(ggplot2)
+
+# --- Settings ----------------------------------------------------------------
+top_n    <- 20
+col_up   <- "#2980B9"
+col_down <- "#C0392B"
+
+# --- Prepare data ------------------------------------------------------------
+gsea_clean_cells <- sig_gsea_cells %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^GOBP ") %>%
+      str_remove("^HALLMARK ") %>%
+      str_remove("^KEGG ") %>%
+      str_to_title() %>%
+      str_wrap(width = 45),
+    direction = factor(direction, levels = c("Upregulated", "Downregulated"))
+  )
+
+# --- Plot function ------------------------------------------------------------
+plot_nes <- function(df, db) {
+  
+  plot_df <- df %>%
+    filter(database == db) %>%
+    arrange(desc(abs(NES))) %>%
+    slice_head(n = top_n) %>%
+    mutate(pathway_label = fct_reorder(pathway_label, NES))
+  
+  x_max <- ceiling(max(abs(plot_df$NES), na.rm = TRUE) + 0.5)
+  
+  ggplot(plot_df, aes(x = NES, y = pathway_label, fill = direction)) +
+    geom_vline(xintercept = 0, color = "grey40", linewidth = 0.5) +
+    geom_col(width = 0.75, alpha = 0.9) +
+    geom_text(
+      aes(
+        label = paste0("FDR=", formatC(FDR.q.val, format = "e", digits = 1)),
+        hjust = ifelse(NES > 0, -0.08, 1.08)
+      ),
+      size = 2.7, color = "grey30"
+    ) +
+    scale_fill_manual(
+      values = c("Upregulated" = col_up, "Downregulated" = col_down),
+      name = "Direction", drop = FALSE
+    ) +
+    scale_x_continuous(
+      limits = c(-x_max, x_max),
+      expand = expansion(mult = c(0.01, 0.25))
+    ) +
+    labs(
+      title = paste0(db, " — GSEA Normalized Enrichment Scores"),
+      x = "Normalized Enrichment Score (NES)",
+      y = NULL
+    ) +
+    theme_classic(base_size = 12) +
+    theme(
+      plot.title         = element_text(face = "bold", size = 13),
+      axis.text.y        = element_text(size = 9, color = "black"),
+      panel.grid.major.x = element_line(color = "grey90", linewidth = 0.4),
+      legend.position    = "bottom",
+      plot.margin        = margin(10, 20, 10, 10)
+    )
+}
+
+# --- Generate plots ----------------------------------------------------------
+# Check your database values first:
+unique(sig_gsea_cells$database)
+
+p_gobp_cells     <- plot_nes(gsea_clean_cells, "GOBP")
+p_hallmark_cells <- plot_nes(gsea_clean_cells, "Hallmark")
+p_kegg_cells     <- plot_nes(gsea_clean_cells, "KEGG")
+
+print(p_gobp_cells)
+print(p_hallmark_cells)
+print(p_kegg_cells)
+
+# Save GSEA NES bar plots
+ggsave(
+  filename    = "Figure_cells_GSEA_GOBP_NES.tiff",
+  plot        = p_gobp_cells,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 8,
+  height      = 7,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+ggsave(
+  filename    = "Figure_cells_GSEA_Hallmark_NES.tiff",
+  plot        = p_hallmark_cells,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 8,
+  height      = 7,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+ggsave(
+  filename    = "Figure_cells_GSEA_KEGG_NES.tiff",
+  plot        = p_kegg_cells,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 8,
+  height      = 7,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+write.csv(
+  sig_gsea_cells,
+  file = "C:/Users/Maggie Drelichman/Thesis/output/cells/sig_gsea_cells.csv",
+  row.names = FALSE
+)
+```
+
+```{r}
+colnames(sig_gsea_cells)
+head(sig_gsea_cells, 3)
+```
+```{r}
+# =============================================================================
+# GSEA Heatmap — Hallmark (Main Figure)
+# =============================================================================
+
+# --- Filter to Hallmark, ≥2 comparisons --------------------------------------
+hallmark_counts <- gsea_all %>%
+  filter(database == "Hallmark") %>%
+  group_by(NAME) %>%
+  summarise(n_sig = n_distinct(comparison), .groups = "drop") %>%
+  filter(n_sig >= 2)
+
+gsea_hallmark <- gsea_all %>%
+  filter(database == "Hallmark", NAME %in% hallmark_counts$NAME) %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^HALLMARK ") %>%
+      str_to_title() %>%
+      str_wrap(width = 35),
+    comparison = factor(comparison, levels = comparison_order)
+  )
+
+# Complete grid so NA tiles show as grey
+gsea_hallmark_complete <- gsea_hallmark %>%
+  dplyr::select(NAME, pathway_label, database, comparison, NES, FDR.q.val) %>%
+  complete(nesting(NAME, pathway_label, database), comparison)
+
+# Order rows by mean NES
+hallmark_order <- gsea_hallmark_complete %>%
+  group_by(NAME, pathway_label) %>%
+  summarise(mean_NES = mean(NES, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_NES)
+
+gsea_hallmark_complete$pathway_label <- factor(
+  gsea_hallmark_complete$pathway_label,
+  levels = unique(hallmark_order$pathway_label)
+)
+
+# --- Plot --------------------------------------------------------------------
+p_hallmark_heatmap <- ggplot(gsea_hallmark_complete,
+                              aes(x = comparison, y = pathway_label, fill = NES)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  geom_text(
+    data = gsea_hallmark_complete %>% filter(FDR.q.val < 0.05),
+    aes(label = "*"),
+    size = 4, color = "black", vjust = 0.75
+  ) +
+  scale_fill_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "NES",
+    na.value = "grey90"
+  ) +
+  labs(
+    title = "Hallmark Pathway Enrichment Across Comparisons",
+    x     = NULL,
+    y     = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    axis.text.x      = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y      = element_text(size = 9, color = "black"),
+    legend.position  = "right",
+    plot.title       = element_text(face = "bold", size = 13),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+print(p_hallmark_heatmap)
+
+# --- Save main figure --------------------------------------------------------
+ggsave(
+  "Figure_GSEA_Heatmap_Hallmark.tiff",
+  p_hallmark_heatmap,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 9,
+  height      = 8,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+# =============================================================================
+# Supplemental Heatmaps — GOBP and KEGG
+# =============================================================================
+
+# GOBP — ≥2 comparisons, top 30 by mean absolute NES
+gobp_counts <- gsea_all %>%
+  filter(database == "GOBP") %>%
+  group_by(NAME) %>%
+  summarise(n_sig = n_distinct(comparison), .groups = "drop") %>%
+  filter(n_sig >= 2)
+
+gobp_top30 <- gsea_all %>%
+  filter(database == "GOBP", NAME %in% gobp_counts$NAME) %>%
+  group_by(NAME) %>%
+  summarise(mean_abs_NES = mean(abs(NES), na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(mean_abs_NES)) %>%
+  slice_head(n = 30)
+
+gsea_gobp <- gsea_all %>%
+  filter(database == "GOBP", NAME %in% gobp_top30$NAME) %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^GOBP ") %>%
+      str_to_title() %>%
+      str_wrap(width = 40),
+    comparison = factor(comparison, levels = comparison_order)
+  )
+
+gsea_gobp_complete <- gsea_gobp %>%
+  dplyr::select(NAME, pathway_label, database, comparison, NES, FDR.q.val) %>%
+  complete(nesting(NAME, pathway_label, database), comparison)
+
+gobp_order <- gsea_gobp_complete %>%
+  group_by(NAME, pathway_label) %>%
+  summarise(mean_NES = mean(NES, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_NES)
+
+gsea_gobp_complete$pathway_label <- factor(
+  gsea_gobp_complete$pathway_label,
+  levels = unique(gobp_order$pathway_label)
+)
+
+p_gobp_heatmap <- ggplot(gsea_gobp_complete,
+                          aes(x = comparison, y = pathway_label, fill = NES)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  geom_text(
+    data = gsea_gobp_complete %>% filter(FDR.q.val < 0.05),
+    aes(label = "*"),
+    size = 4, color = "black", vjust = 0.75
+  ) +
+  scale_fill_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "NES",
+    na.value = "grey90"
+  ) +
+  labs(
+    title = "GOBP Pathway Enrichment Across Comparisons (Supplemental)",
+    x = NULL, y = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    axis.text.x      = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y      = element_text(size = 9, color = "black"),
+    legend.position  = "right",
+    plot.title       = element_text(face = "bold", size = 13),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+print(p_gobp_heatmap)
+
+ggsave("Supplemental_GSEA_Heatmap_GOBP.tiff", p_gobp_heatmap,
+       path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width       = 9,
+       height      = 10,
+       units       = "in",
+       dpi         = 1200,
+       device      = "tiff",
+       compression = "lzw")
+# KEGG — ≥2 comparisons (small collection, won't be too tall)
+kegg_counts <- gsea_all %>%
+  filter(database == "KEGG") %>%
+  group_by(NAME) %>%
+  summarise(n_sig = n_distinct(comparison), .groups = "drop") %>%
+  filter(n_sig >= 2)
+
+gsea_kegg <- gsea_all %>%
+  filter(database == "KEGG", NAME %in% kegg_counts$NAME) %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_replace_all("_", " ") %>%
+      str_remove("^KEGG ") %>%
+      str_to_title() %>%
+      str_wrap(width = 40),
+    comparison = factor(comparison, levels = comparison_order)
+  )
+
+gsea_kegg_complete <- gsea_kegg %>%
+  dplyr::select(NAME, pathway_label, database, comparison, NES, FDR.q.val) %>%
+  complete(nesting(NAME, pathway_label, database), comparison)
+
+kegg_order <- gsea_kegg_complete %>%
+  group_by(NAME, pathway_label) %>%
+  summarise(mean_NES = mean(NES, na.rm = TRUE), .groups = "drop") %>%
+  arrange(mean_NES)
+
+gsea_kegg_complete$pathway_label <- factor(
+  gsea_kegg_complete$pathway_label,
+  levels = unique(kegg_order$pathway_label)
+)
+
+p_kegg_heatmap <- ggplot(gsea_kegg_complete,
+                          aes(x = comparison, y = pathway_label, fill = NES)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  geom_text(
+    data = gsea_kegg_complete %>% filter(FDR.q.val < 0.05),
+    aes(label = "*"),
+    size = 4, color = "black", vjust = 0.75
+  ) +
+  scale_fill_gradient2(
+    low = "#C0392B", mid = "white", high = "#2980B9",
+    midpoint = 0, name = "NES", na.value = "grey90"
+  ) +
+  labs(
+    title = "KEGG Pathway Enrichment Across Comparisons (Supplemental)",
+    x = NULL, y = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    axis.text.x     = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y     = element_text(size = 9, color = "black"),
+    legend.position = "right",
+    plot.title      = element_text(face = "bold", size = 13),
+    plot.margin     = margin(10, 10, 10, 10)
+  )
+
+print(p_kegg_heatmap)
+
+# --- Save supplementals ------------------------------------------------------
+ggsave("Supplemental_GSEA_Heatmap_GOBP.tiff", p_gobp_heatmap,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 9, height = 10, units = "in", dpi = 1200,
+       device = "tiff", compression = "lzw")
+
+ggsave("Supplemental_GSEA_Heatmap_KEGG.tiff", p_kegg_heatmap,
+       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       width = 9, height = 6, units = "in", dpi = 1200,
+       device = "tiff", compression = "lzw")
+
+# --- CSV export --------------------------------------------------------------
+write.csv(
+  bind_rows(gsea_hallmark_complete, gsea_gobp_complete, gsea_kegg_complete) %>%
+    dplyr::select(NAME, database, comparison, NES, FDR.q.val) %>%
+    arrange(database, NAME, comparison),
+  file      = "C:/Users/Maggie Drelichman/Thesis/output/sig_gsea_heatmap_data.csv",
+  row.names = FALSE
+)
+```
+
+```{r}
+# =============================================================================
+# GSEA Heatmap — Hallmark with Physiological Groups
+# =============================================================================
+
+# --- Pathway group lookup table ----------------------------------------------
+pathway_groups <- tribble(
+  ~NAME,                                      ~group,
+  "HALLMARK_INFLAMMATORY_RESPONSE",           "Immune & Inflammation",
+  "HALLMARK_TNFA_SIGNALING_VIA_NFKB",         "Immune & Inflammation",
+  "HALLMARK_IL6_JAK_STAT3_SIGNALING",         "Immune & Inflammation",
+  "HALLMARK_INTERFERON_GAMMA_RESPONSE",       "Immune & Inflammation",
+  "HALLMARK_INTERFERON_ALPHA_RESPONSE",       "Immune & Inflammation",
+  "HALLMARK_MYC_TARGETS_V1",                  "Cell Proliferation & Growth",
+  "HALLMARK_MYC_TARGETS_V2",                  "Cell Proliferation & Growth",
+  "HALLMARK_E2F_TARGETS",                     "Cell Proliferation & Growth",
+  "HALLMARK_G2M_CHECKPOINT",                  "Cell Proliferation & Growth",
+  "HALLMARK_KRAS_SIGNALING_UP",               "Cell Proliferation & Growth",
+  "HALLMARK_MTORC1_SIGNALING",                "Cell Proliferation & Growth",
+  "HALLMARK_GLYCOLYSIS",                      "Metabolism",
+  "HALLMARK_OXIDATIVE_PHOSPHORYLATION",       "Metabolism",
+  "HALLMARK_HYPOXIA",                         "Metabolism",
+  "HALLMARK_CHOLESTEROL_HOMEOSTASIS",         "Lipid Metabolism",
+  "HALLMARK_BILE_ACID_METABOLISM",            "Lipid Metabolism",
+  "HALLMARK_PEROXISOME",                      "Lipid Metabolism",
+  "HALLMARK_XENOBIOTIC_METABOLISM",           "Lipid Metabolism",
+  "HALLMARK_ESTROGEN_RESPONSE_EARLY",         "Hormonal & Endocrine",
+  "HALLMARK_ESTROGEN_RESPONSE_LATE",          "Hormonal & Endocrine",
+  "HALLMARK_MYOGENESIS",                      "Development & Differentiation",
+  "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION","Development & Differentiation",
+  "HALLMARK_WNT_BETA_CATENIN_SIGNALING",      "Development & Differentiation"
+)
+
+# --- Group factor order ------------------------------------------------------
+group_order <- c(
+  "Immune & Inflammation",
+  "Cell Proliferation & Growth",
+  "Metabolism",
+  "Lipid Metabolism",
+  "Hormonal & Endocrine",
+  "Development & Differentiation"
+)
+
+# --- Join groups to heatmap data ---------------------------------------------
+gsea_hallmark_complete <- gsea_hallmark_complete %>%
+  dplyr::select(-group) %>%
+  left_join(pathway_groups, by = "NAME") %>%
+  mutate(group = factor(group, levels = group_order))
+
+# --- Order rows within each group by mean NES --------------------------------
+hallmark_order <- gsea_hallmark_complete %>%
+  group_by(NAME, pathway_label, group) %>%
+  summarise(mean_NES = mean(NES, na.rm = TRUE), .groups = "drop") %>%
+  arrange(group, mean_NES)
+
+gsea_hallmark_complete$pathway_label <- factor(
+  gsea_hallmark_complete$pathway_label,
+  levels = unique(hallmark_order$pathway_label)
+)
+
+# --- Plot --------------------------------------------------------------------
+p_hallmark_heatmap <- ggplot(gsea_hallmark_complete,
+                              aes(x = comparison, y = pathway_label, fill = NES)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  geom_text(
+    data = gsea_hallmark_complete %>% filter(FDR.q.val < 0.05),
+    aes(label = "*"),
+    size = 4, color = "black", vjust = 0.75
+  ) +
+  scale_fill_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "NES",
+    na.value = "grey90"
+  ) +
+  facet_grid(group ~ ., scales = "free_y", space = "free_y") +
+labs(
+  title   = "Hallmark Pathway Enrichment Across Comparisons",
+  x       = NULL,
+  y       = NULL,
+  caption = "All displayed pathways: FDR < 0.1. * FDR < 0.05"
+) +
+  theme_classic(base_size = 11) +
+  theme(
+    axis.text.x      = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y      = element_text(size = 9, color = "black"),
+    strip.text.y     = element_text(face = "bold", size = 9, angle = 0),
+    strip.background = element_rect(fill = "grey92", color = NA),
+    panel.spacing    = unit(0.3, "lines"),
+    legend.position  = "right",
+    plot.title       = element_text(face = "bold", size = 13),
+    plot.margin      = margin(10, 10, 10, 10),
+    plot.caption     = element_text(size = 9, color = "grey30", hjust = 0, face = "italic")
+  )
+
+print(p_hallmark_heatmap)
+
+# --- Save --------------------------------------------------------------------
+ggsave(
+  "Figure_GSEA_Heatmap_Hallmark_Grouped.tiff",
+  p_hallmark_heatmap,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 9,
+  height      = 9,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+
+```{r}
+# =============================================================================
+# 1. DOT PLOT — NES color + FDR size
+# =============================================================================
+
+library(tidyverse)
+library(ggplot2)
+
+# Only plot significant cells (drop NAs)
+gsea_dot <- gsea_hallmark_complete %>%
+  filter(!is.na(NES)) %>%
+  mutate(neg_log10_fdr = -log10(FDR.q.val))
+
+p_dotplot <- ggplot(gsea_dot,
+                    aes(x = comparison, y = pathway_label,
+                        color = NES, size = neg_log10_fdr)) +
+  geom_point() +
+  scale_color_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "NES"
+  ) +
+  scale_size_continuous(
+    name   = "-log10(FDR)",
+    range  = c(2, 8)
+  ) +
+  facet_grid(group ~ ., scales = "free_y", space = "free_y") +
+  labs(
+    title = "Hallmark Pathway Enrichment Across Comparisons",
+    x     = NULL,
+    y     = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    axis.text.x      = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y      = element_text(size = 9, color = "black"),
+    strip.text.y     = element_text(face = "bold", size = 9, angle = 0),
+    strip.background = element_rect(fill = "grey92", color = NA),
+    panel.spacing    = unit(0.3, "lines"),
+    legend.position  = "right",
+    plot.title       = element_text(face = "bold", size = 13),
+    plot.margin      = margin(10, 10, 10, 10)
+  )
+
+print(p_dotplot)
+
+ggsave(
+  "Figure_GSEA_DotPlot_Hallmark.tiff",
+  p_dotplot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 9,
+  height      = 9,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+
+# =============================================================================
+# 2. UPSET PLOT — pathway overlap across comparisons
+# =============================================================================
+
+library(UpSetR)
+
+# Build binary matrix (pathways x comparisons)
+upset_data <- gsea_hallmark_complete %>%
+  filter(!is.na(NES)) %>%
+  mutate(
+    comparison_clean = comparison %>%
+      str_replace_all("\n", " ") %>%
+      str_replace_all("µ", "u") %>%
+      str_replace_all(" ", "_")
+  ) %>%
+  dplyr::select(NAME, comparison_clean) %>%
+  mutate(present = 1) %>%
+  pivot_wider(
+    names_from  = comparison_clean,
+    values_from = present,
+    values_fill = 0
+  ) %>%
+  as.data.frame()
+
+rownames(upset_data) <- upset_data$NAME
+upset_data <- upset_data %>% dplyr::select(-NAME)
+```
+```{r}
+#installed.packages("UpSetR")
+library(UpSetR)
+# Print to screen first
+# Replace both upset() calls with UpSetR::upset()
+
+# Screen version
+UpSetR::upset(
+  upset_data,
+  sets              = colnames(upset_data),
+  order.by          = "freq",
+  decreasing        = TRUE,
+  mb.ratio          = c(0.6, 0.4),
+  text.scale        = c(1.3, 1.1, 1, 1, 1.2, 1),
+  point.size        = 3,
+  line.size         = 1,
+  mainbar.y.label   = "Pathway Intersections",
+  sets.x.label      = "Pathways Per Comparison",
+  matrix.color      = "#2980B9",
+  main.bar.color    = "#2C3E50"
+)
+
+# Save version
+tiff(
+  filename    = "C:/Users/Maggie Drelichman/Thesis/output/figures/Figure_GSEA_UpSet_Hallmark.tiff",
+  width       = 10,
+  height      = 6,
+  units       = "in",
+  res         = 1200,
+  compression = "lzw"
+)
+UpSetR::upset(
+  upset_data,
+  sets              = colnames(upset_data),
+  order.by          = "freq",
+  decreasing        = TRUE,
+  mb.ratio          = c(0.6, 0.4),
+  text.scale        = c(1.3, 1.1, 1, 1, 1.2, 1),
+  point.size        = 3,
+  line.size         = 1,
+  mainbar.y.label   = "Pathway Intersections",
+  sets.x.label      = "Pathways Per Comparison",
+  matrix.color      = "#2980B9",
+  main.bar.color    = "#2C3E50"
+)
+dev.off()
+
+
+# =============================================================================
+# 3. SUMMARY BUBBLE PLOT — group level
+# =============================================================================
+
+group_summary <- gsea_hallmark_complete %>%
+  filter(!is.na(NES)) %>%
+  group_by(group, comparison) %>%
+  summarise(
+    n_pathways = n(),
+    mean_NES   = mean(NES, na.rm = TRUE),
+    .groups    = "drop"
+  ) %>%
+  mutate(
+    group      = factor(group, levels = rev(group_order)),
+    comparison = factor(comparison, levels = comparison_order)
+  )
+
+p_bubble <- ggplot(group_summary,
+                   aes(x = comparison, y = group,
+                       size = n_pathways, color = mean_NES)) +
+  geom_point() +
+  scale_color_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "Mean NES"
+  ) +
+  scale_size_continuous(
+    name  = "# Significant\nPathways",
+    range = c(3, 14)
+  ) +
+  labs(
+    title = "Hallmark Pathway Group Enrichment Across Comparisons",
+    x     = NULL,
+    y     = NULL
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    axis.text.x    = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y    = element_text(size = 10, color = "black", face = "bold"),
+    legend.position = "right",
+    plot.title     = element_text(face = "bold", size = 13),
+    panel.grid.major = element_line(color = "grey92", linewidth = 0.4),
+    plot.margin    = margin(10, 10, 10, 10)
+  )
+
+print(p_bubble)
+
+ggsave(
+  "Figure_GSEA_BubblePlot_Groups.tiff",
+  p_bubble,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 9,
+  height      = 6,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+```{r}
+# ============================================
+# View upregulated pathways first
+# (only 20 — manageable to look at all)
+# ============================================
+
+cat("=== UPREGULATED PATHWAYS (n=20) ===\n")
+up_pathways <- sig_gsea %>%
+  filter(direction == "Upregulated") %>%
+  arrange(desc(NES)) %>%
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, database)
+
+View(up_pathways)
+
+# ============================================
+# View top downregulated pathways
+# Sort by most negative NES
+# ============================================
+
+cat("\n=== TOP 30 DOWNREGULATED PATHWAYS ===\n")
+down_pathways <- sig_gsea %>%
+  filter(direction == "Downregulated") %>%
+  arrange(NES) %>%     # most negative first
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, database) %>%
+  head(30)
+
+View(down_pathways)
+
+# ============================================
+# View Hallmark specifically
+# Most interpretable database
+# Good starting point for story
+# ============================================
+
+cat("\n=== HALLMARK RESULTS ===\n")
+hallmark_sig <- sig_gsea %>%
+  filter(database == "Hallmark") %>%
+  arrange(NES) %>%
+  select(NAME, NES, NOM.p.val,
+         FDR.q.val, SIZE, direction)
+
+View(hallmark_sig)
+
+# ============================================
+# SAVE ALL TO CSV — easiest to work with
+# ============================================
+
+write.csv(
+  sig_gsea %>%
+    arrange(database,
+            direction,
+            desc(abs(NES))) %>%
+    select(NAME, NES, NOM.p.val,
+           FDR.q.val, SIZE,
+           LEADING.EDGE,
+           database, direction),
+  file = "C:/Users/Maggie Drelichman/Thesis/output/cells/GSEA_significant_pathways.csv",
+  row.names = FALSE
+)
+
+cat("CSV saved! Open in Excel to explore.\n")
+
+```
+# Creating NES Bar Charts- One Per Collection 
+
+```{r}
+
+```
+
+```{r}
+# Get complete list of all pathway names to assign biological themes correctly 
+# All upregulated pathways
+cat("=== ALL UPREGULATED PATHWAYS ===\n")
+all_up <- sig_gsea %>%
+  filter(direction == "Upregulated") %>%
+  arrange(desc(NES)) %>%
+  select(NAME, NES, FDR.q.val, database)
+
+write.csv(
+  all_up,
+  "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_all_upregulated_pathways.csv",
+  row.names = FALSE
+)
+
+# All downregulated pathways
+cat("=== ALL DOWNREGULATED PATHWAYS ===\n")
+all_down <- sig_gsea %>%
+  filter(direction == "Downregulated") %>%
+  arrange(NES) %>%
+  select(NAME, NES, FDR.q.val, database)
+
+write.csv(
+  all_down,
+  "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_all_downregulated_pathways.csv",
+  row.names = FALSE
+)
+
+cat("Both CSVs saved!\n")
+cat("Upregulated pathways:", nrow(all_up), "\n")
+cat("Downregulated pathways:", nrow(all_down), "\n")
+
+```
+```{r}
+# ============================================
+# EXTRACT KEYWORDS FROM PATHWAY NAMES
+# Helps you see what themes naturally
+# emerge from YOUR specific data
+# ============================================
+
+# Get all pathway names
+all_names <- sig_gsea$NAME
+
+# Remove database prefix
+# (HALLMARK_, GOBP_, KEGG_)
+clean_names <- all_names %>%
+  str_remove("^HALLMARK_") %>%
+  str_remove("^GOBP_") %>%
+  str_remove("^KEGG_")
+
+# Split into individual words
+all_words <- clean_names %>%
+  str_split("_") %>%
+  unlist() %>%
+  tolower() %>%
+  # Remove very common uninformative words
+  .[!. %in% c("of", "to", "in", "the",
+               "and", "or", "via", "by",
+               "with", "from", "a", "an",
+               "process", "regulation",
+               "positive", "negative",
+               "involved", "response",
+               "dependent", "mediated",
+               "pathway", "signaling",
+               "activity", "based")] %>%
+  table() %>%
+  sort(decreasing = TRUE)
+
+# Show top 50 most common words
+cat("=== TOP 50 KEYWORDS IN YOUR PATHWAYS ===\n")
+print(head(all_words, 50))
+```
+```{r}
+# Print all pathway names cleanly
+# so we can verify theme assignment
+
+cat("=== UPREGULATED (n=20) ===\n")
+sig_gsea %>%
+  filter(direction == "Upregulated") %>%
+  arrange(desc(NES)) %>%
+  pull(NAME) %>%
+  cat(sep = "\n")
+
+cat("\n\n=== DOWNREGULATED HALLMARK (n=27) ===\n")
+sig_gsea %>%
+  filter(direction == "Downregulated",
+         database == "Hallmark") %>%
+  arrange(NES) %>%
+  pull(NAME) %>%
+  cat(sep = "\n")
+
+cat("\n\n=== DOWNREGULATED KEGG (n=36) ===\n")
+sig_gsea %>%
+  filter(direction == "Downregulated",
+         database == "KEGG") %>%
+  arrange(NES) %>%
+  pull(NAME) %>%
+  cat(sep = "\n")
+
+cat("\n\n=== DOWNREGULATED GOBP TOP 30 ===\n")
+sig_gsea %>%
+  filter(direction == "Downregulated",
+         database == "GOBP") %>%
+  arrange(NES) %>%
+  head(30) %>%
+  pull(NAME) %>%
+  cat(sep = "\n")
+```
+```{r}
+# ============================================
+# ASSIGN BIOLOGICAL THEMES
+# Based on exact pathway names in your data
+# ============================================
+
+sig_gsea_themed <- sig_gsea %>%
+  mutate(
+
+    theme = case_when(
+
+      # ----------------------------------------
+      # THEME 1 — Mitochondrial & Energy Metabolism
+      # Includes: oxidative phosphorylation,
+      # glycolysis, TCA cycle, fatty acid oxidation,
+      # neurodegenerative disease pathways
+      # (Parkinson's, Alzheimer's, Huntington's
+      # all driven by mitochondrial dysfunction)
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("OXIDATIVE_PHOSPHORYLATION|",
+               "GLYCOLYSIS|",
+               "FATTY_ACID_METABOL|",
+               "ADIPOGENESIS|",
+               "CHOLESTEROL_HOMEOSTASIS|",
+               "BILE_ACID|",
+               "XENOBIOTIC_METABOL|",
+               "ATP_SYNTHESIS|",
+               "ATP_BIOSYNTHETIC|",
+               "ELECTRON_TRANSPORT|",
+               "MITOCHONDRIAL_ELECTRON|",
+               "MITOCHONDRIAL_TRANSLATION|",
+               "TRICARBOXYLIC_ACID|",
+               "CITRATE_CYCLE|",
+               "PYRUVATE_METABOL|",
+               "BUTANOATE|",
+               "PROPANOATE|",
+               "PENTOSE_PHOSPHATE|",
+               "FRUCTOSE_AND_MANNOSE|",
+               "GALACTOSE_METABOL|",
+               "PPAR_SIGNALING|",
+               "PROTON_MOTIVE_FORCE|",
+               "PROTON_TRANSMEMBRANE|",
+               "PARKINSONS|",
+               "ALZHEIMERS|",
+               "HUNTINGTONS")) ~
+        "Mitochondrial &\nEnergy Metabolism",
+
+      # ----------------------------------------
+      # THEME 2 — Lipid & Sterol Biosynthesis
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("STEROL_BIOSYNTHETIC|",
+               "CHOLESTEROL_BIOSYNTHETIC|",
+               "STEROID_BIOSYNTHETIC|",
+               "GLYCOSPHINGOLIPID|",
+               "GLYCOLIPID_CATABOLIC|",
+               "ALCOHOL_BIOSYNTHETIC|",
+               "GLYCAN_BIOSYNTHESIS|",
+               "PORPHYRIN|",
+               "AMINO_SUGAR|",
+               "PEROXISOME|",
+               "POLYSACCHARIDE_BIOSYNTHETIC|",
+               "BIOSYNTHESIS_OF_UNSATURATED_FATTY|",
+               "LIPID|",
+               "STEROL")) ~
+        "Lipid & Sterol\nBiosynthesis",
+
+      # ----------------------------------------
+      # THEME 3 — Amino Acid & Xenobiotic Metabolism
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("TRYPTOPHAN|",
+               "VALINE_LEUCINE|",
+               "GLUTATHIONE|",
+               "ARGININE_AND_PROLINE|",
+               "METABOLISM_OF_XENOBIOTICS|",
+               "AMINOACYL_TRNA|",
+               "DOPAMINE_METABOLIC|",
+               "CELLULAR_RESPONSE_TO_TOXIC|",
+               "CELLULAR_OXIDANT_DETOX")) ~
+        "Amino Acid &\nXenobiotic Metabolism",
+
+      # ----------------------------------------
+      # THEME 4 — Signaling & Cell Growth
+      # Includes mitotic and meiotic pathways
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("MTORC1|",
+               "PI3K_AKT|",
+               "MYC_TARGETS|",
+               "P53|",
+               "APOPTOSIS|",
+               "ANGIOGEN|",
+               "EPITHELIAL_MESENCHYMAL|",
+               "INSULIN_SIGNALING|",
+               "CELL_CYCLE|",
+               "FERROPTOSIS|",
+               "APOPTOTIC|",
+               "MITOTIC_RECOMBINATION|",
+               "SPERMATID_DIFFERENTIATION|",
+               "CHROMOSOME_ORGANIZATION_INVOLVED|",
+               "PRE_MIRNA|",
+               "CELL_PROLIFERATION")) ~
+        "Signaling &\nCell Growth",
+
+      # ----------------------------------------
+      # THEME 5 — Immune & Inflammatory Response
+      # Includes hormone response and
+      # sensory/chemical stimulus pathways
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("REACTIVE_OXYGEN|",
+               "COMPLEMENT|",
+               "COAGULATION|",
+               "INTERFERON|",
+               "IL6_JAK|",
+               "TNFA_SIGNALING|",
+               "HYPOXIA|",
+               "UV_RESPONSE|",
+               "ESTROGEN_RESPONSE|",
+               "ANDROGEN_RESPONSE|",
+               "SYSTEMIC_LUPUS|",
+               "PATHOGENIC_ESCHERICHIA|",
+               "RESPONSE_TO_FUNGUS|",
+               "ZYMOGEN|",
+               "T_CELL_PROLIFERATION|",
+               "INTRACELLULAR_IRON|",
+               "SENSORY_PERCEPTION_OF_CHEMICAL|",
+               "FERROPTOSIS|",
+               "NEGATIVE_REGULATION_OF_FERROPTOSIS|",
+               "DOPAMINE")) ~
+        "Immune & Inflammatory\nResponse",
+
+      # ----------------------------------------
+      # THEME 6 — Protein Processing &
+      # Cellular Trafficking
+      # Includes ER stress, lysosome,
+      # extracellular transport
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("UNFOLDED_PROTEIN|",
+               "PROTEASOME|",
+               "RIBOSOME|",
+               "TOPOLOGICALLY_INCORRECT|",
+               "PROTEIN_INSERTION_INTO_ER|",
+               "NUCLEAR_MEMBRANE|",
+               "LYSOSOME|",
+               "EXTRACELLULAR_TRANSPORT|",
+               "ENDOPLASMIC_RETICULUM_STRESS|",
+               "REGULATION_OF_ENDOPLASMIC")) ~
+        "Protein Processing &\nCellular Trafficking",
+
+      # ----------------------------------------
+      # THEME 7 — Cytoskeletal & Ciliary Organization
+      # Mostly upregulated pathways
+      # ----------------------------------------
+      str_detect(NAME,
+        paste0("CILIUM|",
+               "FLAGELLUM|",
+               "CENTRIOLE|",
+               "AXONEME|",
+               "MICROTUBULE|",
+               "MITOTIC_SPINDLE|",
+               "PROTEIN_LOCALIZATION_TO_MICROTUBULE|",
+               "PROTEIN_LOCALIZATION_TO_CILIUM")) ~
+        "Cytoskeletal &\nCiliary Organization",
+
+      # Catch anything missed
+      TRUE ~ "Other"
+    )
+  )
+
+# ============================================
+# VERIFY — Check every pathway got a theme
+# ============================================
+
+cat("=== THEME ASSIGNMENT SUMMARY ===\n")
+print(table(sig_gsea_themed$theme))
+
+cat("\n=== CHECK FOR UNASSIGNED PATHWAYS ===\n")
+unassigned <- sig_gsea_themed %>%
+  filter(theme == "Other") %>%
+  select(NAME, database, direction)
+
+if (nrow(unassigned) == 0) {
+  cat("All pathways successfully assigned!\n")
+} else {
+  cat("WARNING:", nrow(unassigned),
+      "pathways not assigned:\n")
+  print(unassigned)
+}
+
+# ============================================
+# VERIFY — Check themes make sense
+# Print pathways per theme
+# ============================================
+
+cat("\n=== PATHWAYS BY THEME ===\n")
+sig_gsea_themed %>%
+  select(NAME, theme, direction,
+         NES, database) %>%
+  arrange(theme, direction, desc(abs(NES))) %>%
+  group_by(theme) %>%
+  group_walk(~ {
+    cat("\n---", .y$theme, "---\n")
+    print(as.data.frame(.x[,
+      c("NAME", "NES",
+        "direction", "database")]))
+  })
+```
+```{r}
+# Just run this part first
+cat("=== THEME ASSIGNMENT SUMMARY ===\n")
+print(table(sig_gsea_themed$theme))
+
+cat("\n=== UNASSIGNED PATHWAYS ===\n")
+unassigned <- sig_gsea_themed %>%
+  filter(theme == "Other") %>%
+  select(NAME, database, direction)
+print(unassigned)
+```
+```{r}
+# ============================================
+# STEP 7 — Make a dot plot by theme
+# ============================================
+
+# Take top 3 pathways per theme per direction
+top_pathways <- sig_gsea_themed %>%
+  group_by(theme, direction) %>%
+  slice_max(order_by = abs(NES),
+            n        = 3) %>%
+  ungroup() %>%
+  # Clean up pathway names for plotting
+  mutate(
+    NAME_clean = str_replace_all(NAME, "_", " "),
+    NAME_clean = str_to_title(
+      str_remove(NAME_clean,
+                 "^(Hallmark |KEGG |GOBP )")
+    )
+  )
+
+# Dot plot
+dot_plot <- ggplot(
+  top_pathways,
+  aes(x     = NES,
+      y     = reorder(NAME_clean, NES),
+      color = direction,
+      size  = -log10(FDR.q.val))
+) +
+  geom_point() +
+  scale_color_manual(
+    values = c(
+      "Upregulated"   = "blue",
+      "Downregulated" = "red"
+    )
+  ) +
+  geom_vline(
+    xintercept = 0,
+    linetype   = "dashed",
+    color      = "grey50"
+  ) +
+  facet_wrap(
+    ~ theme,
+    scales = "free_y",
+    ncol   = 1
+  ) +
+  labs(
+    title  = "HTR-8/SVneo: GSEA Results by Biological Theme",
+    x      = "Normalized Enrichment Score (NES)",
+    y      = NULL,
+    color  = "Direction",
+    size   = "-Log10(FDR)"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title  = element_text(hjust = 0.5,
+                                size  = 12,
+                                face  = "bold"),
+    axis.text.y = element_text(size = 8),
+    strip.text  = element_text(face = "bold",
+                                size = 9)
+  )
+
+print(dot_plot)
+
+# Save dot plot
+ggsave(
+  filename    = "Figure3_GSEA_themes_dotplot.tiff",
+  plot        = dot_plot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 7,
+  height      = 10,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+

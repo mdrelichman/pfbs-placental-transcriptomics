@@ -1,0 +1,415 @@
+---
+title: "GSEA Sex Comparison - Placenta 20uM PFBS"
+output: html_document
+date: "2026-05-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(forcats)
+library(ggVennDiagram)   # install.packages("ggVennDiagram") if needed
+library(UpSetR)          # install.packages("UpSetR") if needed
+```
+
+```{r}
+# ============================================================
+# STEP 1 — Set paths to your GSEA output folders
+# UPDATE THESE to match your actual folder names
+# Each path should point to the folder GSEA created
+# (the one containing gsea_report_for_na_pos/neg .tsv files)
+# ============================================================
+
+# --- HALLMARK ---
+male_hallmark_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_HALLMARK"
+female_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_HALLMARK"
+
+# --- REACTOME (add when ready) ---
+# male_reactome_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_REACTOME"
+# female_reactome_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_REACTOME"
+
+# --- GOBP (add when ready) ---
+# male_gobp_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_GOBP"
+# female_gobp_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_GOBP"
+
+# --- KEGG (add when ready) ---
+# male_kegg_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_KEGG"
+# female_kegg_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_KEGG"
+```
+
+```{r}
+# ============================================================
+# HELPER FUNCTION — auto-detects TSV filename (no hardcoded timestamps)
+# ============================================================
+
+read_gsea_tsv <- function(folder, direction, sex, database) {
+  pattern <- if (direction == "pos") {
+    "gsea_report_for_na_pos.*\\.tsv"
+  } else {
+    "gsea_report_for_na_neg.*\\.tsv"
+  }
+
+  f <- list.files(folder, pattern = pattern, full.names = TRUE)[1]
+
+  if (is.na(f)) {
+    warning("No TSV found in: ", folder, " for direction: ", direction)
+    return(NULL)
+  }
+
+  read.delim(f, stringsAsFactors = FALSE) %>%
+    mutate(
+      sex       = sex,
+      database  = database,
+      direction = if (direction == "pos") "Upregulated" else "Downregulated"
+    )
+}
+```
+
+```{r}
+# ============================================================
+# STEP 2 — Read all GSEA results
+# ============================================================
+
+male_h_pos   <- read_gsea_tsv(male_hallmark_path,   "pos", "Male",   "Hallmark")
+male_h_neg   <- read_gsea_tsv(male_hallmark_path,   "neg", "Male",   "Hallmark")
+female_h_pos <- read_gsea_tsv(female_hallmark_path, "pos", "Female", "Hallmark")
+female_h_neg <- read_gsea_tsv(female_hallmark_path, "neg", "Female", "Hallmark")
+
+# Uncomment when additional collections are ready:
+# male_r_pos   <- read_gsea_tsv(male_reactome_path,   "pos", "Male",   "Reactome")
+# male_r_neg   <- read_gsea_tsv(male_reactome_path,   "neg", "Male",   "Reactome")
+# female_r_pos <- read_gsea_tsv(female_reactome_path, "pos", "Female", "Reactome")
+# female_r_neg <- read_gsea_tsv(female_reactome_path, "neg", "Female", "Reactome")
+
+# Bind all collections together
+all_gsea <- bind_rows(
+  male_h_pos, male_h_neg,
+  female_h_pos, female_h_neg
+  # male_r_pos, male_r_neg,
+  # female_r_pos, female_r_neg
+)
+
+colnames(all_gsea)
+cat("Total rows loaded:", nrow(all_gsea), "\n")
+```
+
+```{r}
+# ============================================================
+# STEP 3 — Clean pathway names & filter significant pathways
+# Broad threshold: FDR < 0.25 and NOM p < 0.05
+# ============================================================
+
+all_gsea_clean <- all_gsea %>%
+  filter(!is.na(NAME), NAME != "") %>%
+  mutate(
+    pathway_label = NAME %>%
+      str_remove("^HALLMARK_") %>%
+      str_remove("^REACTOME_") %>%
+      str_remove("^GOBP_") %>%
+      str_remove("^KEGG_") %>%
+      str_replace_all("_", " ") %>%
+      str_to_title() %>%
+      str_wrap(width = 40),
+    sex = factor(sex, levels = c("Female", "Male"))
+  )
+
+sig_gsea <- all_gsea_clean %>%
+  filter(FDR.q.val < 0.25, NOM.p.val < 0.05)
+
+cat("Significant pathways total:", nrow(sig_gsea), "\n")
+print(table(sig_gsea$sex, sig_gsea$direction, sig_gsea$database))
+```
+
+# Visualization 1: Bubble / Dot Plot (Sex Comparison)
+Pathways on y-axis, sex on x-axis. Color = NES (blue = up, red = down). Size = -log10(FDR). Only pathways significant in at least one sex are shown.
+
+```{r fig.width=9, fig.height=10}
+# ============================================================
+# All pathways significant in at least one sex
+# ============================================================
+
+# Get union of significant pathway names per database
+sig_names <- sig_gsea %>%
+  select(NAME, database) %>%
+  distinct()
+
+# Pull full data for those pathways across both sexes
+bubble_data <- all_gsea_clean %>%
+  inner_join(sig_names, by = c("NAME", "database")) %>%
+  mutate(
+    sig_label = case_when(
+      FDR.q.val < 0.05  ~ "FDR < 0.05",
+      FDR.q.val < 0.25  ~ "FDR < 0.25",
+      TRUE               ~ "ns"
+    ),
+    sig_label = factor(sig_label,
+                       levels = c("FDR < 0.05", "FDR < 0.25", "ns"))
+  )
+
+bubble_plot <- ggplot(
+  bubble_data,
+  aes(x     = sex,
+      y     = fct_reorder(pathway_label, NES),
+      color = NES,
+      size  = -log10(FDR.q.val + 1e-4),
+      shape = sig_label)
+) +
+  geom_point(alpha = 0.85) +
+  scale_color_gradient2(
+    low      = "#C0392B",
+    mid      = "white",
+    high     = "#2980B9",
+    midpoint = 0,
+    name     = "NES"
+  ) +
+  scale_size_continuous(
+    name   = "-Log10(FDR)",
+    range  = c(2, 8)
+  ) +
+  scale_shape_manual(
+    values = c("FDR < 0.05" = 16, "FDR < 0.25" = 17, "ns" = 1),
+    name   = "Significance"
+  ) +
+  facet_wrap(~ database, scales = "free_y", ncol = 1) +
+  labs(
+    title = "GSEA Pathway Enrichment by Sex\n20uM PFBS vs. Control — Placenta",
+    x     = NULL,
+    y     = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    plot.title   = element_text(face = "bold", hjust = 0.5, size = 12),
+    axis.text.y  = element_text(size = 8, color = "black"),
+    axis.text.x  = element_text(size = 11, face = "bold"),
+    strip.text   = element_text(face = "bold"),
+    panel.grid.major.x = element_blank()
+  )
+
+print(bubble_plot)
+
+ggsave(
+  filename    = "Figure_GSEA_BubblePlot_Sex.tiff",
+  plot        = bubble_plot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 9,
+  height      = 10,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+
+# Visualization 2: Grouped NES Bar Chart (Sex Comparison)
+Side-by-side bars per pathway. Only significant pathways (FDR < 0.25) shown. Colored by sex.
+
+```{r fig.width=10, fig.height=8}
+# ============================================================
+# Use only pathways significant in at least one sex
+# ============================================================
+
+bar_data <- bubble_data %>%
+  mutate(NES_plot = ifelse(is.na(NES), 0, NES))
+
+bar_plot <- ggplot(
+  bar_data,
+  aes(x    = NES_plot,
+      y    = fct_reorder(pathway_label, NES_plot),
+      fill = sex)
+) +
+  geom_col(
+    position = position_dodge(width = 0.7),
+    width    = 0.65,
+    alpha    = 0.85
+  ) +
+  geom_vline(xintercept = 0, color = "grey40", linewidth = 0.5) +
+  scale_fill_manual(
+    values = c("Female" = "#E07BA0", "Male" = "#5B8DB8"),
+    name   = "Sex"
+  ) +
+  facet_wrap(~ database, scales = "free_y", ncol = 1) +
+  labs(
+    title = "GSEA NES by Sex — Placenta 20uM PFBS",
+    x     = "Normalized Enrichment Score (NES)",
+    y     = NULL
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    plot.title         = element_text(face = "bold", hjust = 0.5, size = 12),
+    axis.text.y        = element_text(size = 8, color = "black"),
+    panel.grid.major.x = element_line(color = "grey90", linewidth = 0.4),
+    legend.position    = "bottom",
+    strip.text         = element_text(face = "bold")
+  )
+
+print(bar_plot)
+
+ggsave(
+  filename    = "Figure_GSEA_BarChart_Sex.tiff",
+  plot        = bar_plot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 10,
+  height      = 8,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+
+# Visualization 3: Venn Diagram
+Overlap of significant pathway names between male and female. Good for a quick 2-set comparison. Use per collection or combined.
+
+```{r fig.width=7, fig.height=6}
+# ============================================================
+# Significant pathway names per sex
+# ============================================================
+
+male_sig_pathways   <- sig_gsea %>% filter(sex == "Male")   %>% pull(NAME) %>% unique()
+female_sig_pathways <- sig_gsea %>% filter(sex == "Female") %>% pull(NAME) %>% unique()
+
+venn_list <- list(
+  Male   = male_sig_pathways,
+  Female = female_sig_pathways
+)
+
+cat("Male significant pathways:  ", length(male_sig_pathways), "\n")
+cat("Female significant pathways:", length(female_sig_pathways), "\n")
+cat("Shared pathways:", length(intersect(male_sig_pathways, female_sig_pathways)), "\n")
+cat("\nShared pathway names:\n")
+print(intersect(male_sig_pathways, female_sig_pathways))
+
+venn_plot <- ggVennDiagram(
+  venn_list,
+  label_alpha = 0,
+  set_color   = c("#5B8DB8", "#E07BA0")
+) +
+  scale_fill_gradient(low = "white", high = "#B0C4DE") +
+  labs(title = "Shared Significant Pathways: Male vs. Female Placenta\n20uM PFBS — FDR < 0.25") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 11))
+
+print(venn_plot)
+
+ggsave(
+  filename    = "Figure_GSEA_Venn_Sex.tiff",
+  plot        = venn_plot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 7,
+  height      = 6,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+```
+
+# Visualization 4: UpSet Plot
+Better than Venn when you have multiple collections. Shows all combinations of overlap. Extend the list below as you add more collections.
+
+```{r fig.width=9, fig.height=6}
+# ============================================================
+# Build membership matrix across groups
+# Add more groups here as you run more collections
+# ============================================================
+
+all_pathways <- unique(sig_gsea$NAME)
+
+upset_data <- data.frame(
+  pathway = all_pathways,
+  Male    = as.integer(all_pathways %in% male_sig_pathways),
+  Female  = as.integer(all_pathways %in% female_sig_pathways)
+
+  # Add more columns when ready, e.g.:
+  # Male_Reactome   = as.integer(all_pathways %in% male_reactome_sig),
+  # Female_Reactome = as.integer(all_pathways %in% female_reactome_sig)
+)
+
+# Save a copy — useful to inspect which pathways are in which intersections
+write.csv(
+  upset_data,
+  "C:/Users/Maggie Drelichman/Thesis/output/placenta/GSEA_pathway_overlap_matrix.csv",
+  row.names = FALSE
+)
+
+tiff(
+  filename    = "C:/Users/Maggie Drelichman/Thesis/output/figures/Figure_GSEA_UpSet_Sex.tiff",
+  width       = 9,
+  height      = 6,
+  units       = "in",
+  res         = 300,
+  compression = "lzw"
+)
+
+upset(
+  upset_data,
+  sets            = c("Male", "Female"),
+  order.by        = "freq",
+  sets.bar.color  = c("#5B8DB8", "#E07BA0"),
+  main.bar.color  = "grey30",
+  text.scale      = 1.3,
+  mainbar.y.label = "Pathway Intersections",
+  sets.x.label    = "Significant Pathways per Sex"
+)
+
+dev.off()
+
+# Also print to viewer
+upset(
+  upset_data,
+  sets            = c("Male", "Female"),
+  order.by        = "freq",
+  sets.bar.color  = c("#5B8DB8", "#E07BA0"),
+  main.bar.color  = "grey30",
+  text.scale      = 1.3,
+  mainbar.y.label = "Pathway Intersections",
+  sets.x.label    = "Significant Pathways per Sex"
+)
+```
+
+# Visualization 5: EnrichmentMap (Cytoscape — export files here)
+EnrichmentMap is built in Cytoscape, not R. Run this chunk to export the files GSEA already created in the correct format. Then in Cytoscape: Apps > EnrichmentMap > load the files below.
+
+```{r}
+# ============================================================
+# GSEA already produces the files EnrichmentMap needs.
+# This chunk just reminds you what to load in Cytoscape.
+# ============================================================
+
+cat("=== FILES TO LOAD IN CYTOSCAPE EnrichmentMap ===\n\n")
+
+cat("For MALE Hallmark:\n")
+cat("  Results file (pos): ", list.files(male_hallmark_path, "gsea_report_for_na_pos.*tsv", full.names=TRUE)[1], "\n")
+cat("  Results file (neg): ", list.files(male_hallmark_path, "gsea_report_for_na_neg.*tsv", full.names=TRUE)[1], "\n")
+cat("  GMT file: the h.all.*.symbols.gmt you used for GSEA\n\n")
+
+cat("For FEMALE Hallmark:\n")
+cat("  Results file (pos): ", list.files(female_hallmark_path, "gsea_report_for_na_pos.*tsv", full.names=TRUE)[1], "\n")
+cat("  Results file (neg): ", list.files(female_hallmark_path, "gsea_report_for_na_neg.*tsv", full.names=TRUE)[1], "\n")
+cat("  GMT file: the h.all.*.symbols.gmt you used for GSEA\n\n")
+
+cat("In EnrichmentMap: load male as Dataset 1, female as Dataset 2.\n")
+cat("Set FDR cutoff to 0.25, overlap cutoff to 0.375 (Jaccard+Overlap combined).\n")
+cat("Nodes colored by NES, edges by gene overlap.\n")
+```
+
+```{r}
+# ============================================================
+# EXPORT: Save significant pathway table for reference
+# ============================================================
+
+write.csv(
+  sig_gsea %>%
+    arrange(database, sex, direction, desc(abs(NES))) %>%
+    select(NAME, sex, direction, NES, NOM.p.val, FDR.q.val, SIZE, LEADING.EDGE, database),
+  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/GSEA_placenta_significant_pathways.csv",
+  row.names = FALSE
+)
+
+cat("Significant pathway table saved!\n")
+cat("Total significant pathways:", nrow(sig_gsea), "\n")
+print(table(sig_gsea$sex, sig_gsea$direction))
+```

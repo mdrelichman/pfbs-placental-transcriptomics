@@ -1,0 +1,623 @@
+---
+title: "Cells_05"
+output: html_document
+date: "2025-06-25"
+---
+# RNA triplicates pooled within each experiment: 
+# Experiment 1 -> Control 1 + Exposed 1
+# Experiment 2 -> Control 2 + Exposed 2
+# Experiment 3 -> Control 3 + Exposed 3 
+# As each experiment contributed exactly this will be a paired design, where pairing is by experiment (rather than donor; see placenta transcriptomic work)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# install DESeq2
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+
+#install tidyverse (ggplot2 is in tidyverse)
+#install.packages("tidyverse")
+
+```
+# Package Setup
+```{r}
+library( "DESeq2" )
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r}
+# Define the file path and set working directory 
+setwd("C:/Users/Maggie Drelichman/Thesis/data/cells")
+
+# cells_1_5um 
+
+cells_1_5um_count_data <- read.csv('N1_5um_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_1_5um_count_data)[2] = "cells_1_5um"
+
+# cells_1_Control 
+
+cells_1_Control_count_data <- read.csv('N1_Control_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_1_Control_count_data)[2] = "cells_1_Control"
+
+# cells_2_5um 
+
+cells_2_5um_count_data <- read.csv('N2_5um_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_2_5um_count_data)[2] = "cells_2_5um"
+
+# cells_1_Control 
+
+cells_2_Control_count_data <- read.csv('N2_Control_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_2_Control_count_data)[2] = "cells_2_Control"
+
+# cells_3_5um 
+
+cells_3_5um_count_data <- read.csv('N3_5um_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_3_5um_count_data)[2] = "cells_3_5um"
+
+# cells_1_Control 
+
+cells_3_Control_count_data <- read.csv('N3_Control_counts.tabular', header = TRUE, sep = "\t")
+colnames(cells_3_Control_count_data)[2] = "cells_3_Control"
+
+```
+
+# Join all count data into one data frame by full_join & remove NA values with 0 
+```{r}
+
+#put all data frames into list 
+
+df_list <- list(cells_3_Control_count_data, cells_3_5um_count_data, cells_2_Control_count_data, cells_2_5um_count_data, cells_1_Control_count_data, cells_1_5um_count_data)
+
+library(purrr)
+
+# merge all data frames into list 
+count_data <- purrr::reduce(df_list, dplyr::full_join, by= 'Geneid')
+
+
+# make the Geneid the row id 
+count_data <- count_data %>% remove_rownames %>% column_to_rownames(var="Geneid")
+
+cells_5um_count_data_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_count_data.csv"
+write.csv(as.data.frame(count_data), file = cells_5um_count_data_file_path, row.names = TRUE)
+
+```
+
+# Create Metadata
+## Goal: Comparing "control" vs. "treated" across three experiments
+```{r}
+SampleName <- c(colnames(count_data))
+treatment <- c("control", "treated", "control", "treated", "control", "treated")
+experiment <- c("exp3","exp3","exp2", "exp2","exp1","exp1")
+
+meta_data <- data.frame(SampleName, treatment, experiment)
+meta_data <- meta_data %>% remove_rownames %>% column_to_rownames(var="SampleName")
+meta_data$treatment <- as.factor(meta_data$treatment)
+meta_data$experiment <- as.factor(meta_data$experiment)
+
+head(meta_data)
+
+```
+# Double check that the name in the Columns in the Counts Matrix = Nmaes in the Meta Data Frame 
+
+```{r}
+
+all(colnames(count_data) %in% rownames(meta_data))
+
+all(colnames(count_data) == rownames(meta_data))
+```
+
+# Create DESeqDataSet object
+
+# Model gene expression as a function treatment, while controlling for experiment (blocking plate to plate variation) 
+```{r}
+design_formula <- ~ experiment + treatment 
+dds <- DESeqDataSetFromMatrix(countData = count_data,
+                              colData = meta_data,
+                              design = design_formula)
+#shows object elements
+dim(dds)
+```
+# Pre-filtering: by removing rows in which there are very few reads
+# filter any counts less than 200 
+```{r}
+keep <- rowSums(counts(dds)) >= 200
+dds <- dds[keep,]
+dds
+head(dds)
+
+resultsNames(dds)
+```
+
+# Relevel Reference Factors 
+```{r}
+dds$treatment <- relevel(dds$treatment, ref = 'control')
+dds$experiment <- relevel(dds$experiment, ref = 'exp1')
+
+levels(dds$treatment) #control should be first 
+levels(dds$experiment) #"exp1" should be first 
+```
+
+# PCA plot
+```{r}
+library(DESeq2)
+library(ggplot2)
+
+# Transform using VST 
+vsd.all <- vst(dds, blind = TRUE)
+
+# Relabel factors BEFORE plotting
+colData(vsd.all)$treatment <- factor(
+  colData(vsd.all)$treatment,
+  levels = c("control", "treated"),
+  labels = c("Control", "5 µM")
+)
+colData(vsd.all)$experiment <- factor(
+  colData(vsd.all)$experiment,
+  levels = c("exp1", "exp2", "exp3"),
+  labels = c("N1", "N2", "N3")
+)
+
+# Verify metadata looks correct BEFORE plotting
+head(colData(vsd.all))
+
+# Extract PCA data for ggplot
+pcaData <- plotPCA(
+  vsd.all,
+  intgroup = c("treatment", "experiment"),
+  returnData = TRUE
+)
+
+# Extract percent variance
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+# Check pcaData looks right
+head(pcaData)
+
+# Build Plots
+p1 <- ggplot(pcaData, aes(PC1, PC2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(
+    values = c(
+      "Control" = "#1b9e77",
+      "5 µM"    = "#d95f02"
+    )
+  ) +
+  labs(
+    title = "HTR-8/SVneo: Control vs. Treatment",
+    x     = paste0("PC1: ", percentVar[1], "% variance"),
+    y     = paste0("PC2: ", percentVar[2], "% variance"),
+    color = "Treatment Group"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title   = element_text(hjust = 0.5, size = 11),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    axis.text.x  = element_text(size = 9),
+    axis.text.y  = element_text(size = 9),
+    legend.title = element_text(size = 10),
+    legend.text  = element_text(size = 9),
+    plot.margin  = margin(t = 10, r = 15,
+                          b = 10, l = 10,
+                          unit = "pt")
+  )
+
+# Save as TIFF
+ggsave(
+  filename    = "Figure1a_PCA_cells.tiff",
+  plot        = p1,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 4.5,
+  height      = 3.5,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+p2 <- ggplot(pcaData, aes(PC1, PC2, color = experiment)) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c(
+    "N1" = "#66c2a5",
+    "N2" = "#fc8d62",
+    "N3" = "#8da0cb"
+  )) +
+  labs(
+    title = "HTR-8/SVneo: By Experiment",
+    x     = paste0("PC1: ", percentVar[1], "% variance"),
+    y     = paste0("PC2: ", percentVar[2], "% variance"),
+    color = "Experiment"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title   = element_text(hjust = 0.5, size = 11),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    axis.text.x  = element_text(size = 9),
+    axis.text.y  = element_text(size = 9),
+    legend.title = element_text(size = 10),
+    legend.text  = element_text(size = 9),
+    plot.margin  = margin(t = 10, r = 15,
+                          b = 10, l = 10,
+                          unit = "pt")
+  )
+
+# Save p2
+ggsave(
+  filename    = "Figure1b_PCA_cells.tiff",
+  plot        = p2,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  width       = 4.5,
+  height      = 3.5,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+# Preview both in RStudio
+print(p1)
+print(p2)
+```
+
+# Test 
+```{r}
+dds <- DESeq(dds) #testing
+
+res.all <- results(dds, independentFiltering = FALSE)  # Extract results table
+
+mcols(res.all)
+summary(res.all,alpha=0.05) #viewing summary of DE genes
+
+res.all$gene <- rownames(res.all) #adding actual columnn with gene names
+res.all <- res.all [,c('gene','log2FoldChange','baseMean','lfcSE', 'stat','pvalue','padj')] #reordering columns
+rownames(res.all)<-NULL #removing non-column row names (genes)
+dim(res.all) #checking dataframe
+head(res.all)#checking dataframe
+
+log2foldchange_cells_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/results_cells_5.csv"
+write.csv(as.data.frame(res.all), file = log2foldchange_cells_results_file_path, row.names = TRUE)
+
+resultsNames(dds)
+```
+# Checking distribution of p-values 
+```{r}
+hist(res.all$pvalue, breaks = 50,
+     main = "P-value Distribution",
+     xlab = "p-value",
+     col = "steelblue")
+
+```
+
+# Save as .rnk file for Pathway Analysis in GSEA 
+```{r}
+ranked_list <- res.all %>%
+  filter(!is.na(log2FoldChange)) %>%
+  filter(!is.na(gene)) %>%
+  filter(gene != "") %>%
+  group_by(gene) %>%
+  slice_max(
+    order_by  = abs(log2FoldChange),
+    n         = 1,
+    with_ties = FALSE
+  ) %>%
+  ungroup() %>%
+  arrange(desc(log2FoldChange)) %>%
+  select(gene, log2FoldChange)
+
+
+head(ranked_list)
+tail(ranked_list)
+cat("Total genes:", nrow(ranked_list), "\n")
+
+
+write.table(
+  ranked_list,
+  file      = "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_preranked.rnk",
+  sep       = "\t",          # tab separated
+  row.names = FALSE,         # no row numbers
+  col.names = FALSE,         # no header
+  quote     = FALSE,         # no quotes
+  fileEncoding = "UTF-8"     # standard encoding GSEA can read
+)
+
+cat("RNK file saved!\n")
+
+# Step 4 - verify file looks correct
+# open in Notepad NOT Excel to check
+verify <- read.table(
+  "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_preranked.rnk",
+  sep = "\t",
+  stringsAsFactors = FALSE
+)
+```
+
+# New Threshold Criteria: Getting the # of DEG which meet both criteria 
+
+```{r}
+#install.packages("DT")
+library(DT)
+# Condition thresholds 
+padj_cutoff <- 0.05 
+lfc_cutoff <- 0.585 #log2(1.5) = 0.585
+
+# Both padj < 0.05 AND absolute log2FC >= 0.585 
+
+both <- res.all[res.all$padj < padj_cutoff & abs(res.all$log2FoldChange) >= lfc_cutoff, ] 
+both <- as.data.frame(both)
+dim(both) 
+options(max.print = 1000)
+print(both)
+
+DT:: datatable(both)
+
+# Only padj significant 
+padj_only <- res.all[res.all$padj < padj_cutoff & abs(res.all$log2FoldChange) < lfc_cutoff, ] 
+padj_only <- as.data.frame(padj_only)
+dim(padj_only) 
+options(max.print = 1000)
+print(padj_only)
+
+DT:: datatable(padj_only)
+
+# Only log2FC significant 
+lfc_only <- res.all[res.all$padj >= padj_cutoff & abs(res.all$log2FoldChange) >= lfc_cutoff, ]
+lfc_only <- as.data.frame(lfc_only)
+dim(lfc_only) 
+options(max.print = 1000)
+print(lfc_only)
+
+DT:: datatable(lfc_only)
+
+#install.packages("openxlsx")
+library(openxlsx)
+write.xlsx(list(
+  "Both" = both,
+  "Adjusted P-Value Only" = padj_only,
+  "LogFC Only" = lfc_only
+), file = "C:/Users/Maggie Drelichman/Desktop/2025 DESeq2/cells_5_gene_counts_threshold_L(1.5)FC.xlsx")
+
+```
+
+# Identifying Up and Down Regulated Genes 
+```{r}
+# add an additional column that identifies a gene as unregulated, downregulated, or unchanged
+# note the choice of pvalue and log2(1.5)FoldChange cutoff. 
+res.all <- as.data.frame(res.all)
+res.all <- res.all %>%
+  mutate(
+  Expression = case_when
+  (log2FoldChange >= log2(1.5) & padj <= 0.05 ~ "Up-regulated",
+  log2FoldChange <= -log2(1.5) & padj <= 0.05 ~ "Down-regulated",
+  TRUE ~ "Unchanged")
+  )
+head(res.all)
+```
+# Which Genes are the Top 10 Most Variable?
+```{r}
+top <- 10
+# we are getting the top 10 up and down regulated genes by filtering the column Up-regulated and Down-regulated and sorting by the adjusted p-value. 
+
+top_genes <- bind_rows(
+  res.all %>%
+  filter(Expression == 'Up-regulated') %>%
+  arrange(padj, desc(abs(log2FoldChange))) %>%
+  head(top),
+  res.all %>%
+  filter(Expression == 'Down-regulated') %>%
+  arrange(padj, desc(abs(log2FoldChange))) %>%
+  head(top)
+  )
+
+# create a data frame just holding the top 10 genes
+
+Top_Hits = head(arrange(res.all,pvalue),10)
+Top_Hits
+```
+
+
+```{r}
+colnames(res.all)
+```
+# Volcano Plot (Code developed with assistance from Claude (claude-sonnet-4-6, Anthropic, 2026))
+# Dimensions tailored to your data range
+# Max -log10(padj) = 8.9
+# Max |LFC| = 1.37
+```{r}
+head(res.all)
+
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+
+# STEP 1 — Prepare volcano data
+# Dimensions tailored to your data range
+# Max -log10(padj) = 8.9
+# Max |LFC| = 1.37
+# ============================================
+
+volcano_data <- res.all %>%
+  filter(!is.na(pvalue)) %>%
+  filter(!is.na(padj)) %>%
+  filter(!is.na(log2FoldChange)) %>%
+  mutate(
+    neg_log10_padj = pmin(-log10(padj), 10),
+
+    significance = case_when(
+      padj < 0.05 & log2FoldChange >  log2(1.5) ~ "Upregulated",
+      padj < 0.05 & log2FoldChange < -log2(1.5) ~ "Downregulated",
+      padj < 0.05                                ~ "Significant (|LFC| < 0.585)",
+      TRUE                                       ~ "Not Significant"
+    ),
+
+    significance = factor(
+      significance,
+      levels = c(
+        "Upregulated",
+        "Downregulated",
+        "Significant (|LFC| < 0.585)",
+        "Not Significant"
+      )
+    )
+  )
+
+cat("Gene counts by category:\n")
+print(table(volcano_data$significance))
+
+top_up <- volcano_data %>%
+  filter(significance == "Upregulated") %>%
+  arrange(padj) %>%
+  head(10)
+
+top_down <- volcano_data %>%
+  filter(significance == "Downregulated") %>%
+  arrange(padj) %>%
+  head(10)
+
+top_sig <- volcano_data %>%
+  filter(significance == "Significant (|LFC| < 0.585)") %>%
+  arrange(padj) %>%
+  head(10)
+
+if (nrow(top_up) > 0 | nrow(top_down) > 0) {
+  genes_to_label <- bind_rows(top_up, top_down)
+  cat("\nLabeling up and downregulated genes\n")
+} else {
+  genes_to_label <- top_sig
+  cat("\nLabeling top significant genes\n")
+}
+
+cat("Genes labeled:", nrow(genes_to_label), "\n")
+print(genes_to_label$gene)
+
+teal_colors <- c(
+  "Upregulated"              = "#004c4c",
+  "Downregulated"            = "#008080",
+  "Significant (|LFC| < 0.585)" = "#5ba8a8",
+  "Not Significant"          = "#d4eaea"
+)
+
+volcano_plot <- ggplot(
+  volcano_data,
+  aes(x     = log2FoldChange,
+      y     = neg_log10_padj,
+      color = significance)
+) +
+  geom_point(
+    data  = volcano_data %>% filter(significance == "Not Significant"),
+    alpha = 0.4,
+    size  = 1.5
+  ) +
+  geom_point(
+    data  = volcano_data %>% filter(significance != "Not Significant"),
+    alpha = 0.9,
+    size  = 2.0
+  ) +
+  scale_color_manual(
+    values = teal_colors,
+    name   = "Expression",
+    labels = c(
+      "Upregulated" = paste0(
+        "Upregulated (padj<0.05, LFC>0.585)  n=",
+        sum(volcano_data$significance == "Upregulated", na.rm = TRUE)
+      ),
+      "Downregulated" = paste0(
+        "Downregulated (padj<0.05, LFC<\u22120.585)  n=",
+        sum(volcano_data$significance == "Downregulated", na.rm = TRUE)
+      ),
+      "Significant (|LFC| < 0.585)" = paste0(
+        "Significant (padj<0.05, |LFC|<0.585)  n=",
+        sum(volcano_data$significance == "Significant (|LFC| < 0.585)", na.rm = TRUE)
+      ),
+      "Not Significant" = paste0(
+        "Not Significant  n=",
+        sum(volcano_data$significance == "Not Significant", na.rm = TRUE)
+      )
+    )
+  ) +
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype   = "dashed",
+    color      = "black",
+    linewidth  = 0.5
+  ) +
+  geom_vline(
+    xintercept = c(-log2(1.5), log2(1.5)),
+    linetype   = "dashed",
+    color      = "black",
+    linewidth  = 0.5
+  ) +
+  geom_label_repel(
+    data          = genes_to_label,
+    aes(label     = gene),
+    size          = 2.8,
+    max.overlaps  = 20,
+    box.padding   = 0.5,
+    point.padding = 0.3,
+    segment.color = "grey40",
+    segment.size  = 0.3,
+    show.legend   = FALSE,
+    color         = "black",
+    fill          = "white",
+    label.size    = 0.25
+  ) +
+  labs(
+    title    = "HTR-8/SVneo: Control vs. 5 µM PFBS",
+    subtitle = paste0(
+      "Upregulated: ",
+      sum(volcano_data$significance == "Upregulated", na.rm = TRUE),
+      "  |  Downregulated: ",
+      sum(volcano_data$significance == "Downregulated", na.rm = TRUE),
+      "  |  Significant (|LFC|<0.585): ",
+      sum(volcano_data$significance == "Significant (|LFC| < 0.585)", na.rm = TRUE)
+    ),
+    x = expression(Log[2]~Fold~Change),
+    y = expression(-Log[10]~adjusted~italic(p)~value)
+  ) +
+  scale_x_continuous(
+    limits = c(-2, 2),
+    breaks = seq(-2, 2, by = 0.5)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 10),
+    breaks = seq(0, 10, by = 2)
+  ) +
+  theme_bw() +
+  theme(
+    plot.title       = element_text(hjust = 0.5, size = 12, face = "bold"),
+    plot.subtitle    = element_text(hjust = 0.5, size = 9, color = "grey40"),
+    axis.title.x     = element_text(size = 11),
+    axis.title.y     = element_text(size = 11),
+    axis.text.x      = element_text(size = 9),
+    axis.text.y      = element_text(size = 9),
+    legend.title     = element_text(size = 9, face = "bold"),
+    legend.text      = element_text(size = 8),
+    legend.position  = "bottom",
+    legend.direction = "vertical",
+    plot.margin      = margin(t = 10, r = 15, b = 10, l = 10, unit = "pt")
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(size = 3, alpha = 1))
+  )
+ggsave(
+  filename    = "New_Threshold_Figure_Volcano_Cells_5uM.tiff",
+  plot        = volcano_plot,
+  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  width       = 6,
+  height      = 7,
+  units       = "in",
+  dpi         = 1200,
+  device      = "tiff",
+  compression = "lzw"
+)
+
+print(volcano_plot)
+```
+

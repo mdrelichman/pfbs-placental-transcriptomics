@@ -9,8 +9,9 @@ date: "2026-01-30"
 knitr::opts_chunk$set(echo = TRUE)
 
 library(readr)
-cells_5uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/cells_5_results.csv")
-tissue_5uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/results_third_5.csv")
+library(here)
+cells_5uM_all_genes <- read_csv(here("output", "comparisons", "cells_5_results.csv"))
+tissue_5uM_all_genes <- read_csv(here("output", "comparisons", "results_third_5.csv"))
 ```
 
 ```{r}
@@ -27,7 +28,7 @@ dim(df_list_next)
 
 cor.test(df_list_next$log2FoldChange.x,df_list_next$log2FoldChange.y)
 
-pdf(file = "C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/correlation_models.pdf")
+pdf(file = here("output", "comparisons", "correlation_models.pdf"))
 
 smoothScatter(df_list_next$log2FoldChange.x~df_list_next$log2FoldChange.y, colramp=colorRampPalette(c("white","violet")), cex=3,  xlim = c(-5, 5), ylim = c(-5, 5), main="0 (Control) vs. 5uM PFBS", xlab="Log2Fold Change (Cells-All Genes)", ylab ="Log2Fold Change (Explants-All Genes")
 
@@ -44,8 +45,8 @@ dev.off()
 ```{r}
 #Loading Packages & Dataframes 
 library(readr)
-PFBS_gene_list <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/shared_placenta_5um_20um_801_DEGs.csv")
-NFKB_gene_target_list <- read_csv("C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/NFKB.csv")
+PFBS_gene_list <- read_csv(here("output", "comparisons", "shared_placenta_5um_20um_801_DEGs.csv"))
+NFKB_gene_target_list <- read_csv(here("output", "comparisons", "NFKB.csv"))
 #install.packages("readxl")
 library(readxl)
 ```
@@ -91,7 +92,7 @@ dim(df_list_next2)
 ```{r}
 cor.test(df_list_next2$log2FoldChange.x,df_list_next2$log2FoldChange.y)
 
-pdf(file = "C:/Users/Maggie Drelichman/Desktop/PFBS DESeq2/correlation_NFKB.pdf")
+pdf(file = here("output", "comparisons", "correlation_NFKB.pdf"))
 
 smoothScatter(df_list_next2$log2FoldChange.x~df_list_next2$log2FoldChange.y, colramp=colorRampPalette(c("white","violet")), cex=3,  xlim = c(-5, 5), ylim = c(-5, 5), main="0 (Control) vs. 5uM PFBS", xlab="Log2FoldChange (Cells-NFKB Genes)", ylab ="Log2FoldChange (Explant-NFKB Genes)")
 abline(v = 0, col="gray40")
@@ -135,7 +136,7 @@ library(readxl)
 library(pheatmap)
 library(RColorBrewer)
 
-wb_path <- "C:/Users/Maggie Drelichman/Thesis/output/cells/Total_Differential_Gene_Expression_Results .xlsx"
+wb_path <- here("output", "cells", "Total_Differential_Gene_Expression_Results .xlsx")
 
 # Sheet names mapped to readable labels
 sheets <- c(
@@ -197,7 +198,7 @@ pheatmap(
   fontsize_row  = 6,
   fontsize_col  = 10,
   main          = "Top 50 Up- and Downregulated Genes (log2FC, padj < 0.05)",
-  filename      = "C:/Users/Maggie Drelichman/Thesis/output/figures/heatmap_top50_up_down.tiff",
+  filename      = here("output", "figures", "heatmap_top50_up_down.tiff"),
   width  = 10,
   height = 14,
   res    = 300

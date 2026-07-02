@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(dplyr)
+library(here)
 library(ggplot2)
 library(stringr)
 
@@ -21,9 +22,9 @@ library(stringr)
 
 # Set your base path
 # UPDATE THIS to your actual GSEA output folders
-cells_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_H/HTR8_5um_PFBS_Hallmark"
-cells_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_G/HTR8_5um_PFBS_GOBP"
-cells_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_cells_K/HTR8_5um_PFBS_KEGG"
+cells_hallmark_path <- here("data", "gsea", "2026_cells_H", "HTR8_5um_PFBS_Hallmark")
+cells_gobp_path     <- here("data", "gsea", "2026_cells_G", "HTR8_5um_PFBS_GOBP")
+cells_kegg_path     <-here("data", "gsea", "2026_cells_K", "HTR8_5um_PFBS_KEGG")
 
 # Read Hallmark results
 cells_hallmark_pos <- read.delim(
@@ -186,7 +187,7 @@ print(p_kegg_cells)
 ggsave(
   filename    = "Figure_cells_GSEA_GOBP_NES.tiff",
   plot        = p_gobp_cells,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 8,
   height      = 7,
   units       = "in",
@@ -198,7 +199,7 @@ ggsave(
 ggsave(
   filename    = "Figure_cells_GSEA_Hallmark_NES.tiff",
   plot        = p_hallmark_cells,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 8,
   height      = 7,
   units       = "in",
@@ -210,7 +211,7 @@ ggsave(
 ggsave(
   filename    = "Figure_cells_GSEA_KEGG_NES.tiff",
   plot        = p_kegg_cells,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 8,
   height      = 7,
   units       = "in",
@@ -220,7 +221,7 @@ ggsave(
 )
 write.csv(
   sig_gsea_cells,
-  file = "C:/Users/Maggie Drelichman/Thesis/output/cells/sig_gsea_cells.csv",
+  file = here("output", "cells", "sig_gsea_cells.csv"),
   row.names = FALSE
 )
 ```
@@ -305,7 +306,7 @@ print(p_hallmark_heatmap)
 ggsave(
   "Figure_GSEA_Heatmap_Hallmark.tiff",
   p_hallmark_heatmap,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 9,
   height      = 8,
   units       = "in",
@@ -389,7 +390,7 @@ p_gobp_heatmap <- ggplot(gsea_gobp_complete,
 print(p_gobp_heatmap)
 
 ggsave("Supplemental_GSEA_Heatmap_GOBP.tiff", p_gobp_heatmap,
-       path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path        = here("output", "figures"),
        width       = 9,
        height      = 10,
        units       = "in",
@@ -457,12 +458,12 @@ print(p_kegg_heatmap)
 
 # --- Save supplementals ------------------------------------------------------
 ggsave("Supplemental_GSEA_Heatmap_GOBP.tiff", p_gobp_heatmap,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 9, height = 10, units = "in", dpi = 1200,
        device = "tiff", compression = "lzw")
 
 ggsave("Supplemental_GSEA_Heatmap_KEGG.tiff", p_kegg_heatmap,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 9, height = 6, units = "in", dpi = 1200,
        device = "tiff", compression = "lzw")
 
@@ -471,7 +472,7 @@ write.csv(
   bind_rows(gsea_hallmark_complete, gsea_gobp_complete, gsea_kegg_complete) %>%
     dplyr::select(NAME, database, comparison, NES, FDR.q.val) %>%
     arrange(database, NAME, comparison),
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/sig_gsea_heatmap_data.csv",
+  file      = here("output", "sig_gsea_heatmap_data.csv"),
   row.names = FALSE
 )
 ```
@@ -579,7 +580,7 @@ print(p_hallmark_heatmap)
 ggsave(
   "Figure_GSEA_Heatmap_Hallmark_Grouped.tiff",
   p_hallmark_heatmap,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 9,
   height      = 9,
   units       = "in",
@@ -640,7 +641,7 @@ print(p_dotplot)
 ggsave(
   "Figure_GSEA_DotPlot_Hallmark.tiff",
   p_dotplot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 9,
   height      = 9,
   units       = "in",
@@ -701,7 +702,7 @@ UpSetR::upset(
 
 # Save version
 tiff(
-  filename    = "C:/Users/Maggie Drelichman/Thesis/output/figures/Figure_GSEA_UpSet_Hallmark.tiff",
+  filename    = here("output", "figures", "Figure_GSEA_UpSet_Hallmark.tiff"),
   width       = 10,
   height      = 6,
   units       = "in",
@@ -777,7 +778,7 @@ print(p_bubble)
 ggsave(
   "Figure_GSEA_BubblePlot_Groups.tiff",
   p_bubble,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 9,
   height      = 6,
   units       = "in",
@@ -866,7 +867,7 @@ write.csv(
            FDR.q.val, SIZE,
            LEADING.EDGE,
            database, direction),
-  file = "C:/Users/Maggie Drelichman/Thesis/output/cells/GSEA_significant_pathways.csv",
+  file = here("output", "cells", "GSEA_significant_pathways.csv"),
   row.names = FALSE
 )
 
@@ -890,7 +891,7 @@ all_up <- sig_gsea %>%
 
 write.csv(
   all_up,
-  "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_all_upregulated_pathways.csv",
+  here("output", "cells", "cells_all_upregulated_pathways.csv"),
   row.names = FALSE
 )
 
@@ -903,7 +904,7 @@ all_down <- sig_gsea %>%
 
 write.csv(
   all_down,
-  "C:/Users/Maggie Drelichman/Thesis/output/cells/cells_all_downregulated_pathways.csv",
+  here("output", "cells", "cells_all_downregulated_pathways.csv"),
   row.names = FALSE
 )
 
@@ -1277,7 +1278,7 @@ print(dot_plot)
 ggsave(
   filename    = "Figure3_GSEA_themes_dotplot.tiff",
   plot        = dot_plot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 7,
   height      = 10,
   units       = "in",

@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #library( "DESeq2" )
 library(tidyverse)
+library(here)
 library(ggplot2)
 ```
 # Load Feature Count Data
@@ -18,7 +19,7 @@ library(ggplot2)
 ```{r}
 # Define the file path and set working directory 
 
-setwd("C:/Users/Maggie Drelichman/Thesis/data/placenta_2026")
+setwd(here("data", "placenta_2026"))
 
 # n1_5um_25 
 n1_5um_25_count_data <- read.csv('1_5um_counts.tabular', header = TRUE, sep = "\t")
@@ -107,7 +108,7 @@ count_data[is.na(count_data)] <- 0
 head(count_data)
 
 # Write Count Data as .csv to File Path 
-count_5um_26_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/combined_count_5um.csv"
+count_5um_26_file_path <- here("output", "placenta", "combined_count_5um.csv")
 
 write.csv(as.data.frame(count_data), file = count_5um_26_file_path, row.names = TRUE)
 ```
@@ -319,7 +320,7 @@ p2 <- ggplot(pcaData, aes(PC1, PC2, color = trial)) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 # Save as PDF
-pdf(file = "C:/Users/Maggie Drelichman/Desktop/2026 DESeq2 Graphs/Combined_20um_pca.pdf",
+pdf(file = here("output", "figures", "Combined_20um_pca.pdf"),
     width = 7, height = 6)
 print(p1)
 print(p2)
@@ -372,7 +373,7 @@ rownames(res.male)<-NULL #removing non-column row names (genes)
 dim(res.male) #checking dataframe
 head(res.male)#checking dataframe
 
-log2foldchange_differential_expression_5um_26_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_5um_26.csv"
+log2foldchange_differential_expression_5um_26_results_file_path <- here("output", "placenta", "male_differential_expression_5um_26.csv")
 write.csv(as.data.frame(res.male), file = log2foldchange_differential_expression_5um_26_results_file_path , row.names = TRUE)
 
 ```
@@ -401,7 +402,7 @@ cat("Total genes:", nrow(ranked_list), "\n")
 
 write.table(
   ranked_list,
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_5_preranked.rnk",
+  file      = here("output", "placenta", "male_5_preranked.rnk"),
   sep       = "\t",          # tab separated
   row.names = FALSE,         # no row numbers
   col.names = FALSE,         # no header
@@ -414,7 +415,7 @@ cat("RNK file saved!\n")
 # Step 4 - verify file looks correct
 # open in Notepad NOT Excel to check
 verify <- read.table(
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_5_preranked.rnk",
+  here("output", "placenta", "male_5_preranked.rnk"),
   sep = "\t",
   stringsAsFactors = FALSE
 )
@@ -435,7 +436,7 @@ rownames(res.female)<-NULL #removing non-column row names (genes)
 dim(res.female) #checking dataframe
 head(res.female)#checking dataframe
 
-F_log2foldchange_differential_expression_5um_26_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_5um_26.csv"
+F_log2foldchange_differential_expression_5um_26_results_file_path <- here("output", "placenta", "female_differential_expression_5um_26.csv")
 write.csv(as.data.frame(res.female), file = F_log2foldchange_differential_expression_5um_26_results_file_path , row.names = TRUE)
 
 ```
@@ -463,7 +464,7 @@ cat("Total genes:", nrow(ranked_list), "\n")
 
 write.table(
   ranked_list,
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_5_preranked.rnk",
+  file      = here("output", "placenta", "female_5_preranked.rnk"),
   sep       = "\t",          # tab separated
   row.names = FALSE,         # no row numbers
   col.names = FALSE,         # no header
@@ -476,7 +477,7 @@ cat("RNK file saved!\n")
 # Step 4 - verify file looks correct
 # open in Notepad NOT Excel to check
 verify <- read.table(
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_5_preranked.rnk",
+  here("output", "placenta", "female_5_preranked.rnk"),
   sep = "\t",
   stringsAsFactors = FALSE
 )
@@ -716,7 +717,7 @@ print(volcano_plot_male)
 ggsave(
   filename    = "New_Threshold_Figure_Volcano_Term_Placenta_5um_PFBS_Male.tiff",
   plot        = volcano_plot_male,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 5,
   height      = 6.5,
   units       = "in",
@@ -728,7 +729,7 @@ ggsave(
 ggsave(
   filename = "New_Threshold_Figure_Volcano_Term_Placenta_5um_PFBS_Male.pdf",
   plot     = volcano_plot_male,
-  path     = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  path     = here("output", "figures"),
   width    = 5,
   height   = 6.5,
   units    = "in",
@@ -767,7 +768,7 @@ print(both_thresholds_male_5um)
 
 write.csv(
   both_thresholds_male_5um,
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/both_thresholds_male_5um.csv",
+  file      = here("output", "both_thresholds_male_5um.csv"),
   row.names = FALSE
 )
 
@@ -977,7 +978,7 @@ print(volcano_plot_female)
 ggsave(
   filename    = "New_Threshold_Figure_Volcano_Term_Placenta_5um_PFBS_Female.tiff",
   plot        = volcano_plot_female,            # FIX 2a
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 5,
   height      = 6.5,
   units       = "in",
@@ -989,7 +990,7 @@ ggsave(
 ggsave(
   filename = "New_Threshold_Figure_Volcano_Term_Placenta_5um_PFBS_Female.pdf",
   plot     = volcano_plot_female,               # FIX 2b
-  path     = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  path     = here("output", "figures"),
   width    = 5,
   height   = 6.5,
   units    = "in",
@@ -1059,11 +1060,11 @@ library(purrr)
 # Load all five results files
 # ============================================
 
-male_placenta_5uM   <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_5um_26.csv")
-male_placenta_20uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_20um_26.csv")
-female_placenta_5uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_5um_26.csv")
-female_placenta_20uM <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_20um_26.csv")
-cells_5um <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/cells/results_cells_5.csv")
+male_placenta_5uM   <- read_csv(here("output", "placenta", "male_differential_expression_5um_26.csv"))
+male_placenta_20uM  <- read_csv(here("output", "placenta", "male_differential_expression_20um_26.csv"))
+female_placenta_5uM  <- read_csv(here("output", "placenta", "female_differential_expression_5um_26.csv"))
+female_placenta_20uM <- read_csv(here("output", "placenta", "female_differential_expression_20um_26.csv"))
+cells_5um <- read_csv(here("output", "cells", "results_cells_5.csv"))
 ```
 
 ```{r}
@@ -1081,7 +1082,7 @@ cat("=== MALE: 5uM vs 20uM ===\n")
 cor.test(df_male_dose$log2FoldChange.x, df_male_dose$log2FoldChange.y)
 
 # PDF
-pdf(file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_dose_correlation.pdf")
+pdf(file = here("output", "placenta", "male_dose_correlation.pdf"))
 smoothScatter(df_male_dose$log2FoldChange.y ~ df_male_dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
               cex = 3, xlim = c(-5, 5), ylim = c(-5, 5),
@@ -1094,7 +1095,7 @@ abline(lm(df_male_dose$log2FoldChange.y ~ df_male_dose$log2FoldChange.x), col = 
 dev.off()
 
 # TIFF
-tiff(filename = "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_dose_correlation.tiff",
+tiff(filename = here("output", "placenta", "male_dose_correlation.tiff"),
      width = 6, height = 6, units = "in", res = 300, compression = "lzw")
 smoothScatter(df_male_dose$log2FoldChange.y ~ df_male_dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
@@ -1121,7 +1122,7 @@ cat("=== FEMALE: 5uM vs 20uM ===\n")
 cor.test(df_female_dose$log2FoldChange.x, df_female_dose$log2FoldChange.y)
 
 # PDF
-pdf(file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_dose_correlation.pdf")
+pdf(file = here("output", "placenta", "female_dose_correlation.pdf"))
 smoothScatter(df_female_dose$log2FoldChange.y ~ df_female_dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
               cex = 3, xlim = c(-5, 5), ylim = c(-5, 5),
@@ -1134,7 +1135,7 @@ abline(lm(df_female_dose$log2FoldChange.y ~ df_female_dose$log2FoldChange.x), co
 dev.off()
 
 # TIFF
-tiff(filename = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_dose_correlation.tiff",
+tiff(filename = here("output", "placenta", "female_dose_correlation.tiff"),
      width = 6, height = 6, units = "in", res = 300, compression = "lzw")
 smoothScatter(df_female_dose$log2FoldChange.y ~ df_female_dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
@@ -1167,7 +1168,7 @@ cat("=== CELLS vs MALE TISSUE: 5uM ===\n")
 cor.test(df_cells_male_5dose$log2FoldChange.x, df_cells_male_5dose$log2FoldChange.y)
 
 # PDF
-pdf(file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/cells_male_dose_correlation.pdf")
+pdf(file = here("output", "placenta", "cells_male_dose_correlation.pdf"))
 smoothScatter(df_cells_male_5dose$log2FoldChange.y ~ df_cells_male_5dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
               cex = 3, xlim = c(-5, 5), ylim = c(-5, 5),
@@ -1180,7 +1181,7 @@ abline(lm(df_cells_male_5dose$log2FoldChange.y ~ df_cells_male_5dose$log2FoldCha
 dev.off()
 
 # TIFF
-tiff(filename = "C:/Users/Maggie Drelichman/Thesis/output/placenta/cells_male_dose_correlation.tiff",
+tiff(filename = here("output", "placenta", "cells_male_dose_correlation.tiff"),
      width = 6, height = 6, units = "in", res = 300, compression = "lzw")
 smoothScatter(df_cells_male_5dose$log2FoldChange.y ~ df_cells_male_5dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
@@ -1209,7 +1210,7 @@ cat("=== CELLS vs FEMALE TISSUE: 5uM ===\n")
 cor.test(df_cells_female_5dose$log2FoldChange.x, df_cells_female_5dose$log2FoldChange.y)
 
 # PDF
-pdf(file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/cells_female_dose_correlation.pdf")
+pdf(file = here("output", "placenta", "cells_female_dose_correlation.pdf"))
 smoothScatter(df_cells_female_5dose$log2FoldChange.y ~ df_cells_female_5dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),
               cex = 3, xlim = c(-5, 5), ylim = c(-5, 5),
@@ -1222,7 +1223,7 @@ abline(lm(df_cells_female_5dose$log2FoldChange.y ~ df_cells_female_5dose$log2Fol
 dev.off()
 
 # TIFF
-tiff(filename = "C:/Users/Maggie Drelichman/Thesis/output/placenta/cells_female_dose_correlation.tiff",
+tiff(filename = here("output", "placenta", "cells_female_dose_correlation.tiff"),
      width = 6, height = 6, units = "in", res = 300, compression = "lzw")
 smoothScatter(df_cells_female_5dose$log2FoldChange.y ~ df_cells_female_5dose$log2FoldChange.x,
               colramp = colorRampPalette(c("white", "violet")),

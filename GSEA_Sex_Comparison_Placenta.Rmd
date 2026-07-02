@@ -8,6 +8,7 @@ date: "2026-05-09"
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 library(dplyr)
+library(here)
 library(ggplot2)
 library(stringr)
 library(tidyr)
@@ -25,20 +26,20 @@ library(UpSetR)          # install.packages("UpSetR") if needed
 # ============================================================
 
 # --- HALLMARK ---
-male_hallmark_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_HALLMARK"
-female_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_HALLMARK"
+male_hallmark_path   <- here("data", "gsea", "PLACENTA_MALE_HALLMARK")
+female_hallmark_path <- here("data", "gsea", "PLACENTA_FEMALE_HALLMARK")
 
 # --- REACTOME (add when ready) ---
-# male_reactome_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_REACTOME"
-# female_reactome_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_REACTOME"
+# male_reactome_path   <- here("data", "gsea", "PLACENTA_MALE_REACTOME")
+# female_reactome_path <- here("data", "gsea", "PLACENTA_FEMALE_REACTOME")
 
 # --- GOBP (add when ready) ---
-# male_gobp_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_GOBP"
-# female_gobp_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_GOBP"
+# male_gobp_path   <- here("data", "gsea", "PLACENTA_MALE_GOBP")
+# female_gobp_path <- here("data", "gsea", "PLACENTA_FEMALE_GOBP")
 
 # --- KEGG (add when ready) ---
-# male_kegg_path   <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_MALE_KEGG"
-# female_kegg_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/PLACENTA_FEMALE_KEGG"
+# male_kegg_path   <- here("data", "gsea", "PLACENTA_MALE_KEGG")
+# female_kegg_path <- here("data", "gsea", "PLACENTA_FEMALE_KEGG")
 ```
 
 ```{r}
@@ -194,7 +195,7 @@ print(bubble_plot)
 ggsave(
   filename    = "Figure_GSEA_BubblePlot_Sex.tiff",
   plot        = bubble_plot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 9,
   height      = 10,
   units       = "in",
@@ -251,7 +252,7 @@ print(bar_plot)
 ggsave(
   filename    = "Figure_GSEA_BarChart_Sex.tiff",
   plot        = bar_plot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 10,
   height      = 8,
   units       = "in",
@@ -297,7 +298,7 @@ print(venn_plot)
 ggsave(
   filename    = "Figure_GSEA_Venn_Sex.tiff",
   plot        = venn_plot,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 7,
   height      = 6,
   units       = "in",
@@ -331,12 +332,12 @@ upset_data <- data.frame(
 # Save a copy — useful to inspect which pathways are in which intersections
 write.csv(
   upset_data,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/GSEA_pathway_overlap_matrix.csv",
+  here("output", "placenta", "GSEA_pathway_overlap_matrix.csv"),
   row.names = FALSE
 )
 
 tiff(
-  filename    = "C:/Users/Maggie Drelichman/Thesis/output/figures/Figure_GSEA_UpSet_Sex.tiff",
+  filename    = here("output", "figures", "Figure_GSEA_UpSet_Sex.tiff"),
   width       = 9,
   height      = 6,
   units       = "in",
@@ -405,7 +406,7 @@ write.csv(
   sig_gsea %>%
     arrange(database, sex, direction, desc(abs(NES))) %>%
     select(NAME, sex, direction, NES, NOM.p.val, FDR.q.val, SIZE, LEADING.EDGE, database),
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/GSEA_placenta_significant_pathways.csv",
+  file      = here("output", "placenta", "GSEA_placenta_significant_pathways.csv"),
   row.names = FALSE
 )
 

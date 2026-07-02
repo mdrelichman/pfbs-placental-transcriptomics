@@ -10,13 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load Packages 
 ```{r}
 library( "DESeq2" )
+library(here)
 library(tidyverse)
 library(ggplot2)
 ```
 # Load Feature Count Data 
 ```{r}
 # Define the file path and set working directory 
-setwd("C:/Users/Maggie Drelichman/Desktop/2026 FeatureCounts")
+setwd(here("data", "featurecounts_2026"))
 
 # n1_20um_26 
 n1_20um_26_count_data <- read.csv('n1_20um_26 featureCounts.tabular', header = TRUE, sep = "\t")
@@ -88,7 +89,7 @@ count_data[is.na(count_data)] <- 0
 head(count_data)
 
 # Write Count Data as .csv to File Path 
-count_20um_26_file_path <- "C:/Users/Maggie Drelichman/Desktop/2026 DESeq2/count_20um_26.csv"
+count_20um_26_file_path <- here("output", "placenta", "count_20um_26.csv")
 
 write.csv(as.data.frame(count_data), file = count_20um_26_file_path, row.names = TRUE)
 ```
@@ -220,7 +221,7 @@ p2 <- ggplot(pcaData, aes(PC1, PC2, color = trial)) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 # Save as PDF
-pdf(file = "C:/Users/Maggie Drelichman/Desktop/2026 DESeq2 Graphs/2026_20um_pca.pdf",
+pdf(file = here("output", "figures", "2026_20um_pca.pdf"),
     width = 7, height = 6)
 print(p1)
 print(p2)
@@ -286,7 +287,7 @@ rownames(res.all)<-NULL #removing non-column row names (genes)
 dim(res.all) #checking dataframe
 head(res.all)#checking dataframe
 
-log2foldchange_third_5um_results_file_path <- "C:/Users/Maggie Drelichman/Desktop/2026 DESeq2/differential_expression_20um_26.csv"
+log2foldchange_third_5um_results_file_path <- here("output", "placenta", "differential_expression_20um_26.csv")
 write.csv(as.data.frame(res.all), file = log2foldchange_third_5um_results_file_path , row.names = TRUE)
 
 ```

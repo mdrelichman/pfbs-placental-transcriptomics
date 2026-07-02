@@ -24,6 +24,7 @@ BiocManager::install("DESeq2")
 # Package Setup
 ```{r}
 library( "DESeq2" )
+library(here)
 library(tidyverse)
 library(ggplot2)
 ```
@@ -31,38 +32,39 @@ library(ggplot2)
 # Load Feature Count Data 
 
 ```{r}
-# Define the file path and set working directory 
-setwd("C:/Users/Maggie Drelichman/Downloads/RNA seq PFBS/FeatureCounts PFBS")
+# Input count files live under the project's data/ folder.
+# A directory variable (unlike setwd) persists across R Markdown chunks.
+third_dir <- here("data", "featurecounts_pfbs")
 ```
 
 ```{r}
-# third_1_20um 
-third_1_20um_count_data <- read.csv('1_20um_counts.tabular', header = TRUE, sep = "\t")
+# third_1_20um
+third_1_20um_count_data <- read.csv(file.path(third_dir, '1_20um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_1_20um_count_data)[2] = "third_1_20um"
 
-# third_1_Control 
+# third_1_Control
 
-third_1_Control_count_data <- read.csv('1_Control_counts.tabular', header = TRUE, sep = "\t")
+third_1_Control_count_data <- read.csv(file.path(third_dir, '1_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_1_Control_count_data)[2] = "third_1_Control"
 
-# third_2_20um 
+# third_2_20um
 
-third_2_20um_count_data <- read.csv('2_20um_counts.tabular', header = TRUE, sep = "\t")
+third_2_20um_count_data <- read.csv(file.path(third_dir, '2_20um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_2_20um_count_data)[2] = "third_2_20um"
 
-# third_2_Control 
+# third_2_Control
 
-third_2_Control_count_data <- read.csv('2_Control_counts.tabular', header = TRUE, sep = "\t")
+third_2_Control_count_data <- read.csv(file.path(third_dir, '2_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_2_Control_count_data)[2] = "third_2_Control"
 
 # third_3_20um
 
-third_3_20um_count_data <- read.csv('3_20um_counts.tabular', header = TRUE, sep = "\t")
+third_3_20um_count_data <- read.csv(file.path(third_dir, '3_20um_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_3_20um_count_data)[2] = "third_3_20um"
 
-# third 3_Control 
+# third 3_Control
 
-third_3_Control_count_data <- read.csv('3_Control_counts.tabular', header = TRUE, sep = "\t")
+third_3_Control_count_data <- read.csv(file.path(third_dir, '3_Control_counts.tabular'), header = TRUE, sep = "\t")
 colnames(third_3_Control_count_data)[2] = "third_3_Control"
 ```
 
@@ -148,7 +150,7 @@ rld.all <- rlog(dds)
 ```
 # Specify the grouping variable for intgroup (replace 'group_variable' with your actual grouping variable)
 #```{r}
-#pdf(file = "C:/Users/Maggie Drelichman/Downloads/RNA seq PFBS/third_trimester_20.pdf")
+#pdf(file = here("output", "figures", "third_trimester_20.pdf"))
 
 #group_variables <- c("treatment","trial")
 #DESeq2::plotPCA(rld.all, intgroup="treatment")
@@ -182,7 +184,7 @@ rownames(res.all)<-NULL #removing non-column row names (genes)
 dim(res.all) #checking dataframe
 head(res.all)#checking dataframe
 
-log2foldchangeresults_file_path <- "C:/Users/Maggie Drelichman/Downloads/RNA seq PFBS/results_third_20.csv"
+log2foldchangeresults_file_path <- here("output", "placenta", "results_third_20.csv")
 write.csv(as.data.frame(res.all), file = log2foldchangeresults_file_path, row.names = TRUE)
 
 resultsNames(dds)
@@ -260,7 +262,7 @@ plot_volcano <- function(res, title = "Volcano Plot") {
 
 plot_volcano(res.all, title = "Third Trimester Placenta: Control vs 20 µM PFBS")
 
-pdf("C:/Users/Maggie Drelichman/Downloads/RNA seq PFBS/volcano_plot_20uM.pdf", width = 7, height = 6)
+pdf(here("output", "figures", "volcano_plot_20uM.pdf"), width = 7, height = 6)
 plot_volcano(res.all, title = "Third Trimester Placenta: Control vs 20 µM PFBS")
 dev.off()
 ```

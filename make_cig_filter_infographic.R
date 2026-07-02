@@ -1,6 +1,7 @@
 library(officer)
+library(here)
 
-out_path <- "C:/Users/Maggie Drelichman/Thesis/cig_filter_study_design.pptx"
+out_path <- here("cig_filter_study_design.pptx")
 
 prs <- read_pptx()
 

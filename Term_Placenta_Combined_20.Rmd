@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #library( "DESeq2" )
 library(tidyverse)
+library(here)
 library(ggplot2)
 ```
 # Load Feature Count Data
@@ -18,7 +19,7 @@ library(ggplot2)
 ```{r}
 # Define the file path and set working directory 
 
-setwd("C:/Users/Maggie Drelichman/Thesis/data/placenta_2026")
+setwd(here("data", "placenta_2026"))
 
 # n1_20um_25 
 n1_20um_25_count_data <- read.csv('1_20um_counts.tabular', header = TRUE, sep = "\t")
@@ -107,7 +108,7 @@ count_data[is.na(count_data)] <- 0
 head(count_data)
 
 # Write Count Data as .csv to File Path 
-count_20um_26_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/combined_count_20um.csv"
+count_20um_26_file_path <- here("output", "placenta", "combined_count_20um.csv")
 
 write.csv(as.data.frame(count_data), file = count_20um_26_file_path, row.names = TRUE)
 ```
@@ -245,7 +246,7 @@ library(pheatmap)
 # Normalize for visualization only
 vsd <- vst(dds, blind = TRUE)
 
-output_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta"
+output_path <- here("output", "placenta")
 
 # Define shared colors
 color_male   <- "#2E86AB"   # blue — male & batch 1
@@ -440,7 +441,7 @@ p2 <- ggplot(pcaData, aes(PC1, PC2, color = trial)) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 # Save as PDF
-pdf(file = "C:/Users/Maggie Drelichman/Desktop/2026 DESeq2 Graphs/Combined_20um_pca.pdf",
+pdf(file = here("output", "figures", "Combined_20um_pca.pdf"),
     width = 7, height = 6)
 print(p1)
 print(p2)
@@ -493,7 +494,7 @@ rownames(res.male)<-NULL #removing non-column row names (genes)
 dim(res.male) #checking dataframe
 head(res.male)#checking dataframe
 
-log2foldchange_differential_expression_20um_26_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_20um_26.csv"
+log2foldchange_differential_expression_20um_26_results_file_path <- here("output", "placenta", "male_differential_expression_20um_26.csv")
 write.csv(as.data.frame(res.male), file = log2foldchange_differential_expression_20um_26_results_file_path , row.names = TRUE)
 
 ```
@@ -522,7 +523,7 @@ cat("Total genes:", nrow(ranked_list), "\n")
 
 write.table(
   ranked_list,
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/2_male_20_preranked.rnk",
+  file      = here("output", "placenta", "2_male_20_preranked.rnk"),
   sep       = "\t",          # tab separated
   row.names = FALSE,         # no row numbers
   col.names = FALSE,         # no header
@@ -535,7 +536,7 @@ cat("RNK file saved!\n")
 # Step 4 - verify file looks correct
 # open in Notepad NOT Excel to check
 verify <- read.table(
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/2_male_20_preranked.rnk",
+  here("output", "placenta", "2_male_20_preranked.rnk"),
   sep = "\t",
   stringsAsFactors = FALSE
 )
@@ -556,7 +557,7 @@ rownames(res.female)<-NULL #removing non-column row names (genes)
 dim(res.female) #checking dataframe
 head(res.female)#checking dataframe
 
-F_log2foldchange_differential_expression_20um_26_results_file_path <- "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_20um_26.csv"
+F_log2foldchange_differential_expression_20um_26_results_file_path <- here("output", "placenta", "female_differential_expression_20um_26.csv")
 write.csv(as.data.frame(res.female), file = F_log2foldchange_differential_expression_20um_26_results_file_path , row.names = TRUE)
 
 ```
@@ -584,7 +585,7 @@ cat("Total genes:", nrow(ranked_list), "\n")
 
 write.table(
   ranked_list,
-  file      = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_20_preranked.rnk",
+  file      = here("output", "placenta", "female_20_preranked.rnk"),
   sep       = "\t",          # tab separated
   row.names = FALSE,         # no row numbers
   col.names = FALSE,         # no header
@@ -597,7 +598,7 @@ cat("RNK file saved!\n")
 # Step 4 - verify file looks correct
 # open in Notepad NOT Excel to check
 verify <- read.table(
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_20_preranked.rnk",
+  here("output", "placenta", "female_20_preranked.rnk"),
   sep = "\t",
   stringsAsFactors = FALSE
 )
@@ -843,7 +844,7 @@ print(volcano_plot_male)
 ggsave(
   filename    = "New_Threshold_Figure_Volcano_Term_Placenta_20um_PFBS_Male.tiff",
   plot        = volcano_plot_male,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 5,
   height      = 6.5,
   units       = "in",
@@ -855,7 +856,7 @@ ggsave(
 ggsave(
   filename = "New_Threshold_Figure_Volcano_Term_Placenta_20um_PFBS_Male.pdf",
   plot     = volcano_plot_male,
-  path     = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  path     = here("output", "figures"),
   width    = 5,
   height   = 6.5,
   units    = "in",
@@ -1066,7 +1067,7 @@ print(volcano_plot_female)
 ggsave(
   filename    = "New_Threshold_Figure_Volcano_Term_Placenta_20um_PFBS_Female.tiff",
   plot        = volcano_plot_female,            # FIX 2a
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 5,
   height      = 6.5,
   units       = "in",
@@ -1078,7 +1079,7 @@ ggsave(
 ggsave(
   filename = "New_Threshold_Figure_Volcano_Term_Placenta_20um_PFBS_Female.pdf",
   plot     = volcano_plot_female,               # FIX 2b
-  path     = "C:/Users/Maggie Drelichman/Thesis/output/figures/",
+  path     = here("output", "figures"),
   width    = 5,
   height   = 6.5,
   units    = "in",
@@ -1143,8 +1144,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(readr)
 
-female_placenta_20uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_20um_26.csv")
-male_placenta_20uM_all_genes <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_20um_26.csv")
+female_placenta_20uM_all_genes <- read_csv(here("output", "placenta", "female_differential_expression_20um_26.csv"))
+male_placenta_20uM_all_genes <- read_csv(here("output", "placenta", "male_differential_expression_20um_26.csv"))
 ```
 
 ```{r}
@@ -1160,7 +1161,7 @@ dim(df_list_next)
 
 cor.test(df_list_next$log2FoldChange.x,df_list_next$log2FoldChange.y)
 
-pdf(file = "C:/Users/Maggie Drelichman/Thesis/output/new threshold placenta_20_correlation.pdf")
+pdf(file = here("output", "new threshold placenta_20_correlation.pdf"))
 
 smoothScatter(df_list_next$log2FoldChange.x~df_list_next$log2FoldChange.y, colramp=colorRampPalette(c("white","violet")), cex=3,  xlim = c(-5, 5), ylim = c(-5, 5), main="0 (Control) vs. 20uM PFBS", xlab="Log2Fold Change (Male Tissue-All Genes)", ylab ="Log2Fold Change (Female Tissue -All Genes)")
 
@@ -1171,7 +1172,7 @@ dev.off()
 
 
 # TIFF
-tiff(filename = "C:/Users/Maggie Drelichman/Thesis/output/placenta_20_correlation.tiff",
+tiff(filename = here("output", "placenta_20_correlation.tiff"),
      width = 6, height = 6, units = "in", res = 300, compression = "lzw")
 smoothScatter(df_list_next$log2FoldChange.x ~ df_list_next$log2FoldChange.y,
               colramp = colorRampPalette(c("white", "violet")),

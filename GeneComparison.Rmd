@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #install.packages("UpSetR")
 library(UpSetR)
+library(here)
 library(dplyr)
 ```
 
@@ -20,11 +21,11 @@ library(dplyr)
 # Load all five results files
 # ============================================
 
-male_placenta_5uM   <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_5um_26.csv")
-male_placenta_20uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/male_differential_expression_20um_26.csv")
-female_placenta_5uM  <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_5um_26.csv")
-female_placenta_20uM <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_20um_26.csv")
-cells_5um <- read_csv("C:/Users/Maggie Drelichman/Thesis/output/cells/results_cells_5.csv")
+male_placenta_5uM   <- read_csv(here("output", "placenta", "male_differential_expression_5um_26.csv"))
+male_placenta_20uM  <- read_csv(here("output", "placenta", "male_differential_expression_20um_26.csv"))
+female_placenta_5uM  <- read_csv(here("output", "placenta", "female_differential_expression_5um_26.csv"))
+female_placenta_20uM <- read_csv(here("output", "placenta", "female_differential_expression_20um_26.csv"))
+cells_5um <- read_csv(here("output", "cells", "results_cells_5.csv"))
 ```
 
 ```{r}
@@ -77,10 +78,10 @@ dn_annotated %>% filter(shared == "Shared") %>% as.data.frame() %>% print()
 
 # Save annotated tables
 write.csv(up_annotated,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/DEG_annotated_upregulated.csv",
+  here("output", "placenta", "DEG_annotated_upregulated.csv"),
   row.names = FALSE)
 write.csv(dn_annotated,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/DEG_annotated_downregulated.csv",
+  here("output", "placenta", "DEG_annotated_downregulated.csv"),
   row.names = FALSE)
 
 cat("\nAnnotated tables saved.\n")
@@ -115,7 +116,7 @@ fig_venn_male <- ggVennDiagram(
 ggsave(
   filename    = "Supplemental_Venn_Male_Upregulated.tiff",
   plot        = fig_venn_male,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 8, height = 5, units = "in",
   dpi         = 300, device = "tiff", compression = "lzw"
 )
@@ -146,7 +147,7 @@ print(fig_venn_female)
 ggsave(
   filename    = "Supplemental_Venn_Female_Downregulated.tiff",
   plot        = fig_venn_female,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 8, height = 5, units = "in",
   dpi         = 300, device = "tiff", compression = "lzw"
 )

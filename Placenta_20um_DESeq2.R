@@ -7,6 +7,7 @@
 
 # ---- Packages ---------------------------------------------------------------
 library(DESeq2)
+library(here)
 library(tidyverse)
 library(ggplot2)
 library(pheatmap)
@@ -16,8 +17,8 @@ library(apeglm)
 
 # ---- 1. LOAD COUNT DATA -----------------------------------------------------
 
-base_25 <- "C:/Users/Maggie Drelichman/Thesis/data/placenta_2025"
-base_26 <- "C:/Users/Maggie Drelichman/Thesis/data/placenta_2026"
+base_25 <- here("data", "placenta_2025")
+base_26 <- here("data", "placenta_2026")
 
 load_tab <- function(path, col_name) {
   df <- read.csv(path, header = TRUE, sep = "\t")
@@ -86,8 +87,8 @@ print(meta_data)
 # SECTION 1: DATA DIAGNOSTICS (before any modeling)
 # =============================================================================
 
-out_fig <- "C:/Users/Maggie Drelichman/Thesis/output/figures"
-out_pl  <- "C:/Users/Maggie Drelichman/Thesis/output/placenta"
+out_fig <- here("output", "figures")
+out_pl  <- here("output", "placenta")
 
 # -- 1a. Library sizes --------------------------------------------------------
 lib_sizes <- colSums(count_data)

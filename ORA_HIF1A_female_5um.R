@@ -6,12 +6,13 @@
 # =============================================================================
 
 library(tidyverse)
+library(here)
 library(jsonlite)
 
 # ---- 1. LOAD DGE RESULTS ----------------------------------------------------
 
 dge <- read.csv(
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_differential_expression_5um_26.csv",
+  here("output", "placenta", "female_differential_expression_5um_26.csv"),
   row.names = 1
 )
 
@@ -115,6 +116,6 @@ print(results_table)
 
 write.csv(
   results_table,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/ORA_HIF1A_female_5um.csv",
+  here("output", "placenta", "ORA_HIF1A_female_5um.csv"),
   row.names = FALSE
 )

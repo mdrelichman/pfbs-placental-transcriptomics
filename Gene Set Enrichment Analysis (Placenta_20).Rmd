@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(dplyr)
+library(here)
 library(ggplot2)
 library(stringr)
 
@@ -21,14 +22,14 @@ library(stringr)
 
 # Set your base path
 # UPDATE THIS to your actual GSEA output folders
-tissue_20_female_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_20_H"
-tissue_20_female_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_20_G"
-tissue_20_female_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_female_20_K"
+tissue_20_female_hallmark_path <- here("data", "gsea", "2026_female_20_H")
+tissue_20_female_gobp_path     <- here("data", "gsea", "2026_female_20_G")
+tissue_20_female_kegg_path     <-here("data", "gsea", "2026_female_20_K")
 
 
-tissue_20_male_hallmark_path <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_20_H"
-tissue_20_male_gobp_path     <- "C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_20_G"
-tissue_20_male_kegg_path     <-"C:/Users/Maggie Drelichman/Thesis/data/gsea/2026_male_20_K"
+tissue_20_male_hallmark_path <- here("data", "gsea", "2026_male_20_H")
+tissue_20_male_gobp_path     <- here("data", "gsea", "2026_male_20_G")
+tissue_20_male_kegg_path     <-here("data", "gsea", "2026_male_20_K")
 
 ```
 
@@ -267,24 +268,24 @@ print(p_male_hallmark_20)
 
 # --- Save --------------------------------------------------------------------
 ggsave("Figure_GSEA_20_Female_GOBP_NES.tiff",     p_female_gobp_20,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
 
 ggsave("Figure_GSEA_20_Female_Hallmark_NES.tiff", p_female_hallmark_20,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
 
 ggsave("Figure_GSEA_20_Female_KEGG_NES.tiff",     p_female_kegg_20,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 8, height = 7, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
 
 ggsave("Figure_GSEA_20_Male_Hallmark_NES.tiff",   p_male_hallmark_20,
-       path = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+       path = here("output", "figures"),
        width = 8, height = 4, units = "in", dpi = 1200, device = "tiff", compression = "lzw")
 
 write.csv(
   sig_gsea_tissue_20,
-  file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/sig_gsea_placenta_20.csv",
+  file = here("output", "placenta", "sig_gsea_placenta_20.csv"),
   row.names = FALSE
 )
 
@@ -355,7 +356,7 @@ write.csv(
            FDR.q.val, SIZE,
            LEADING.EDGE,
            database, direction),
-  file = "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_GSEA_significant_pathways.csv",
+  file = here("output", "placenta", "female_GSEA_significant_pathways.csv"),
   row.names = FALSE
 )
 
@@ -379,7 +380,7 @@ all_up <-  gsea_clean_female %>%
 
 write.csv(
   all_up,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_all_upregulated_pathways.csv",
+  here("output", "placenta", "female_all_upregulated_pathways.csv"),
   row.names = FALSE
 )
 
@@ -392,7 +393,7 @@ all_down <-  gsea_clean_female %>%
 
 write.csv(
   all_down,
-  "C:/Users/Maggie Drelichman/Thesis/output/placenta/female_all_downregulated_pathways.csv",
+  here("output", "placenta", "female_all_downregulated_pathways.csv"),
   row.names = FALSE
 )
 
@@ -778,7 +779,7 @@ print(dot_plot_female)
 ggsave(
   filename    = "Figure_GSEA_Female_Themes_Dotplot.tiff",
   plot        = dot_plot_female,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 12,
   height      = 14,
   units       = "in",
@@ -831,7 +832,7 @@ print(dot_plot_male)
 ggsave(
   filename    = "Figure_GSEA_Male_Themes_Dotplot.tiff",
   plot        = dot_plot_male,
-  path        = "C:/Users/Maggie Drelichman/Thesis/output/figures",
+  path        = here("output", "figures"),
   width       = 7,
   height      = 4,
   units       = "in",
